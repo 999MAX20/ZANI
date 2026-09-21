@@ -2,6 +2,22 @@
 
 Zani does not enable all external providers at once. Every real provider must pass a readiness gate before it is exposed to merchants or paid beta traffic.
 
+## Owner-approved V1 scope — 2026-09-16
+
+[V1 product rules](../product/V1_PRODUCT_RULES.md), section 7, require WhatsApp,
+Instagram, Telegram and website intake for the first paid release. The website
+scope is a contact form, not mandatory two-way web chat. Company onboarding is
+self-service with support assistance when needed. AI-assisted intake must follow
+the V1 confirmation matrix; a received form is not permission for the AI bot to
+create a Lead without approval.
+
+The sequence below is a technical rollout order, not permission to omit required
+channels. The readiness matrix remains evidence of historical/current boundaries,
+not a claim that V1 live integrations are accepted. Marketplace/1C roadmap items
+are not mandatory V1 scope. AI usage metering and technical protection remain
+necessary; references to usage limits do not reinstate a commercial monetary
+ceiling rejected in the final owner decision.
+
 ## Approved Order
 
 1. Telegram real webhook.

@@ -742,6 +742,16 @@ Top-header utilities:
 - the notification bell is 24px inside that hit target and must not shrink because of inherited button padding;
 - every icon-only utility requires an accessible name and a visible keyboard focus state.
 
+Client payments (2026-09-14): a neutral secondary header action opens the shared
+payment journal Drawer; client-card actions reuse it with the client selected.
+The Add/refund form uses the shared Modal and confirmation flow. Only the top
+overlay handles Escape; closing the form retains the journal/client card and
+returns focus to its opener. Header actions that have separate desktop/mobile
+DOM nodes may supply a stable `focusReturnId` so the shared overlay can return
+focus to the visible equivalent after a viewport change. Financial validation,
+permissions, retry identity and ledger semantics are defined in
+[Client payments](../crm/client-payments.md).
+
 Mobile navigation:
 
 - touch target at least 44px;
@@ -845,6 +855,7 @@ When a new authenticated page is created:
 ## Global Navigation
 
 - Sidebar is for business navigation only.
+- Desktop and mobile navigation expose the existing `/app/ai-assistant` route under Control, next to Analytics, using `nav.aiAssistant` and the route's `ai_assistant:view` permission and AI capability. Restoring this entry does not change sidebar sizing, overlay behavior, or AI-agent navigation.
 - Language selector belongs in the top header on desktop because it is not a daily workflow action.
 - Rare system controls should stay out of the main sidebar.
 - Mobile drawer should use a calm surface with a dimmed overlay.

@@ -1,54 +1,11 @@
 # Block 13 — Support / Operator Workflow для пилота
 
-Цель блока: дать внутренней команде ZANI не только список пилотных мерчей, но и понятный support workflow: что требует внимания, какой следующий шаг сделать, и где фиксировать действие поддержки.
+> Архив / HISTORICAL_DELIVERY — 2026-09-14. Это ссылка на исторический документ, не очередь разработки.
 
-## Что добавлено
+Исторический отчёт delivery-блока. Его проверки относятся только к исходному снимку; оставшиеся live/policy gates не закрываются архивацией.
 
-### Backend
+- [Сохранённый документ](../../archive_docs/2026-09-14/docs/pilot/block13-support-operator-workflow.md)
+- [Актуальный источник](backend-open-logic-register.md)
+- [Аудит технической документации](../operations/technical-documentation-audit.md)
 
-- `GET /api/platform/merchants/<business_id>/`
-  - возвращает детальную карточку мерча для внутренней команды;
-  - включает operations counters, health и support workflow.
-
-- `POST /api/platform/merchants/<business_id>/support-actions/`
-  - фиксирует действие поддержки через `AuditLog`;
-  - не требует новой таблицы и миграции;
-  - доступен только platform user.
-
-### Support workflow
-
-Для каждого мерча теперь рассчитывается:
-
-- `priority`: `low`, `medium`, `high`;
-- `summary`: главный следующий шаг;
-- `next_steps`: список понятных действий оператора;
-- `recent_actions`: последние действия поддержки.
-
-Примеры next steps:
-
-- проверить ошибки формы;
-- помочь с handoff-диалогами;
-- проверить failed connectors;
-- попросить клиента загрузить Excel/CSV продаж;
-- проверить новые заявки;
-- мониторить пилот.
-
-### Frontend
-
-В platform merchants table добавлен столбец `Support workflow`:
-
-- приоритет поддержки;
-- краткий следующий шаг;
-- список ближайших действий.
-
-Это помогает команде быстро понять, кому писать/звонить и почему.
-
-## Проверки
-
-- `python manage.py check`
-- `python manage.py test apps.core.tests_platform_operations -v 2 --keepdb`
-- `cd frontend && npm run build`
-
-## Важно
-
-Это не тикет-система. Это pilot support layer, чтобы первые 10–50 клиентов не потерялись и команда могла вести их без хаоса.
+Архивация не означает закрытие оставшихся live, policy или certification gates.

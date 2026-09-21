@@ -1,11 +1,11 @@
 # Block 7 — Mobile-first owner onboarding UX
 
-Goal: make the first owner experience feel like a simple mobile business control layer rather than a desktop CRM.
+> Архив / HISTORICAL_DELIVERY — 2026-09-14. Это ссылка на исторический документ, не очередь разработки.
 
-Implemented:
-- `mobile_onboarding` payload in owner dashboard API.
-- Mobile-only owner start card on Dashboard.
-- Setup progress, next best action, and swipeable setup steps.
-- Safer mobile defaults for input font-size and card radius.
+Исторический отчёт delivery-блока. Его проверки относятся только к исходному снимку; оставшиеся live/policy gates не закрываются архивацией.
 
-This block does not add heavy integrations, marketplace logic, or a landing generator. It only improves pilot UX and makes the existing onboarding path clear on phone screens.
+- [Сохранённый документ](../../archive_docs/2026-09-14/docs/pilot/block7-mobile-owner-ux.md)
+- [Актуальный источник](backend-open-logic-register.md)
+- [Аудит технической документации](../operations/technical-documentation-audit.md)
+
+Архивация не означает закрытие оставшихся live, policy или certification gates.

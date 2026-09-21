@@ -1,0 +1,34 @@
+{
+  "description": "Read-only event adapter. SessionStart compact requests owner-authorized two-phase handoff via native app tools. Exact hooks require user review/trust; no direct task, file, Git or network writes.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "^(startup|resume|clear|compact)$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.codex/continuity-hook.cjs\"",
+            "commandWindows": "node \"C:\\Users\\user\\Desktop\\Zani\\.codex\\continuity-hook.cjs\"",
+            "timeout": 5,
+            "additionalContextLimit": 5000,
+            "statusMessage": "Restore project state / request safe handoff after compaction"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.codex/continuity-hook.cjs\"",
+            "commandWindows": "node \"C:\\Users\\user\\Desktop\\Zani\\.codex\\continuity-hook.cjs\"",
+            "timeout": 5,
+            "additionalContextLimit": 5000,
+            "statusMessage": "Restore project state / request safe handoff after compaction"
+          }
+        ]
+      }
+    ]
+  }
+}

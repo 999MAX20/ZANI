@@ -1,5 +1,10 @@
 # WhatsApp Merchant Connector
 
+Credential contract reconciled 2026-09-14 against committed implementation.
+Current channel-ownership/OAuth WIP is not fully certified. Live acceptance is
+separate: [provider rollout](../provider-rollout.md),
+[backend audit](../../pilot/backend-development-audit.md).
+
 ## Purpose
 
 WhatsApp is a per-merchant communication connector. A merchant connects their own WhatsApp Business phone number through Meta Cloud API, and ZANI uses that number to receive client messages, create inbox conversations, run the AI/CRM pipeline, and send manager replies back to WhatsApp.
@@ -41,15 +46,17 @@ The API must be available through public HTTPS. Meta cannot deliver production w
 
 ## Merchant Credentials
 
-Stored per merchant channel in `BotChannel.config_json`:
+Safe metadata stored per merchant channel in `BotChannel.config_json`:
 
 - `provider_mode=meta_cloud`
 - `phone_number_id`
-- `access_token`
 - `business_account_id`
 - `display_phone_number`
 
-Sensitive values are masked in API responses.
+`access_token` and channel webhook secrets are write-only inputs, encrypted in
+the bound connector's `ConnectorCredential` records, not stored in channel JSON.
+API responses expose only masked/derived credential status. Use the shared
+credential helpers and keyring; do not reintroduce plaintext JSON storage.
 
 ## Recommended Setup Flow: Embedded Signup
 
@@ -69,7 +76,7 @@ Sensitive values are masked in API responses.
    - `phone_number_id`;
    - `waba_id`;
    - `display_phone_number`.
-10. Backend exchanges `code` for access token, stores credentials in `BotChannel`, and marks the connector connected.
+10. Backend exchanges `code` for an access token, persists it through encrypted connector credential helpers, and records safe channel/connector metadata. Current WIP ownership/verification guards must pass before accepting a connection.
 11. Merchant sends a message to the connected WhatsApp number and verifies it appears in Unified Inbox.
 
 ## Manual Fallback Flow

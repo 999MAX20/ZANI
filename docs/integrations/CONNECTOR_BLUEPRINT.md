@@ -108,7 +108,7 @@ Each event should include:
 ## Production Checklist
 
 - Setup works for a real merchant or has an explicit mock/dev mode.
-- Provider readiness status is documented in `docs/provider-rollout.md` before the provider appears in merchant UI or support playbooks.
+- Provider readiness status is documented in `docs/integrations/provider-rollout.md` before the provider appears in merchant UI or support playbooks.
 - Merchant-facing labels distinguish live-ready, beta read-only, pilot/setup required, request/roadmap and mock/dev states.
 - Status card shows connected, attention and error states.
 - Health check can be run safely.

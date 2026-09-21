@@ -1,6 +1,6 @@
 # API Action Contract
 
-Last updated: 2026-08-21
+Last updated: 2026-09-14
 
 Purpose: keep frontend and backend aligned on which fields are regular CRUD fields and which fields are state-machine fields that must only change through action endpoints/services.
 
@@ -16,6 +16,42 @@ Current sync note 2026-07-16: refreshed against the current DRF router/actions f
 - Use `POST /api/<resource>/<id>/restore/` for restore. Restore is restricted to owner/admin-level permissions for critical CRM records.
 - Do not write `created_at`, `updated_at`, `archived_at`, `archived_by`, system timestamps, runtime errors, provider payloads, delivery results or audit metadata from frontend.
 - Treat `400` with `{ "fields": [...] }` as a contract violation: switch to the listed action endpoint instead of retrying the generic update.
+
+## Activity timeline reads
+
+The `/app/timeline` workspace uses the existing `GET /api/activity-events/` API;
+it does not create events or offer export/lifecycle actions.
+
+- All queries start from the existing tenant-, capability- and `analytics:view`-
+  scoped queryset. An explicitly requested inaccessible business returns 404;
+  a member without analytics permission, or with the module disabled, gets 403.
+- Filters: `business`, `client` (alias `client_id`), `entity_type`, `entity_id`,
+  `category`, `event_type`, `q` (maximum 160 characters), `actor` (positive ID or
+  `none`), `date_from`/`date_to` (aliases `created_after`/`created_before`). Search
+  includes event text/type and the client name only within the event's business.
+- With `business` supplied, date-only bounds use that business's timezone. The
+  upper date includes the whole day, implemented as an exclusive next midnight.
+  ISO timestamps remain supported. Invalid/reversed ranges return 400.
+- Stable ordering is `-created_at, -id`. `page_size` defaults to 50 for existing
+  callers and is capped at 100; Timeline explicitly requests 20 initially.
+- List/retrieve responses add read-only `actor_name` and `client_name` labels.
+  Actor names require a retained business membership or ownership; account email
+  is never a display-name fallback. Cross-business client labels are blank.
+- `GET /api/activity-events/actors/` returns paginated `{id, name}` options from
+  authorized activity actors, supports `business`, `q`, `page`, `page_size` and
+  an optional `selected_actor` ID. `selected_actor` is resolved from the same
+  authorized queryset, or returned as null. Actor options are not limited to
+  actors on the current event page.
+- Existing metadata serialization/redaction remains in place. The new merchant
+  detail surface additionally projects only validated status, amount and booking
+  time transitions. It never renders raw text fallback, metadata, IDs, IPs,
+  provider payloads or diagnostic source fields. This UI allowlist is not a
+  substitute for API authorization or a claim that all legacy payloads are safe.
+- Related links use an internal entity-type allowlist and current resource view
+  permissions. Destination pages/APIs remain responsible for object access.
+
+No migration, new environment variable, notification, BusinessEvent or AI action
+is introduced by these read-contract additions.
 
 ## Error Envelope
 
@@ -475,6 +511,53 @@ Protected `ApprovalRequest` generic write fields:
 
 Frontend rule: AI can suggest actions, but critical mutating tools must be executed only through `tools/{log_id}/execute/` with a matching approved `ApprovalRequest` when the tool requires approval. Do not directly mutate CRM state from AI UI.
 
+### AI agent lifecycle and channels
+
+Resources:
+
+- `/api/bots/`
+- `/api/bot-channels/`
+- `/api/bot-conversations/`
+- `/api/bot-messages/`
+
+Lifecycle actions:
+
+- `POST /api/bots/{id}/activate/`
+- `POST /api/bots/{id}/pause/`
+- `POST /api/bots/{id}/channels/ensure/`
+  - Required body: `channel` with `website`, `telegram`, `whatsapp` or `instagram`.
+  - Returns the existing selected-agent channel with `200` or creates a draft channel with `201`.
+
+`Bot.readiness` is read-only and reports active profile, active channel and active business knowledge requirements. Generic create cannot create an active bot and generic update cannot mutate `status`; use lifecycle actions. Activation returns `409 invalid_transition` until every readiness requirement is satisfied.
+
+AI-agent profile and lifecycle management uses `ai_automation` permissions. Channel ensuring and provider setup use `integrations` management permissions. Provider mutations must not be granted merely because a user can view integrations.
+
+Transport and autonomous AI have separate eligibility (ZD-012 follow-up):
+
+| Channel | AI agent | Incoming messages / Inbox | Autonomous AI |
+| --- | --- | --- | --- |
+| Active | Active and structurally ready | Accepted | Subject to conversation state, configuration and existing confirmation policy |
+| Active | Paused, draft or structurally unready | Accepted; manager replies remain permission-gated | Blocked |
+| Draft, paused or error | Any | Rejected | Blocked for this channel |
+
+Public website lookup requires an active website channel and its public token.
+Telegram/WhatsApp/Instagram retain their authenticated, tenant-bound routing;
+AI readiness is not webhook authentication. Pausing an agent does not pause its
+channels. Disable a channel separately to stop accepting incoming messages.
+
+Autonomous work rechecks persisted agent, exact channel and conversation state
+before qualification, after qualification, before an automatic reply and after
+reply generation. Bot outbox delivery checks eligibility again; a blocked reply
+becomes a non-automatically-retryable failure, while manager replies retain their
+existing delivery contract. Activation still requires profile/channel/knowledge.
+This does not cancel a provider request already dispatched before pause.
+
+Explicit contact capture in website chat, unread notifications, BusinessEvents,
+configured non-AI automations and explicit client appointment confirmations are
+not AI actions and retain their existing behavior. Manually requested AI drafts
+and approved tools retain their existing role/approval contracts; the agent's
+pause controls autonomous operation, not the business-wide AI capability.
+
 ## Billing
 
 Resource: `/api/billing/current-subscription/`
@@ -646,6 +729,8 @@ Important action endpoints:
 
 Bot channel provider actions:
 
+- `POST /api/bots/{id}/channels/ensure/`
+
 - `POST /api/bot-channels/{id}/telegram-config/`
 - `POST /api/bot-channels/{id}/set-telegram-webhook/`
 - `GET /api/bot-channels/{id}/telegram-status/`
@@ -666,6 +751,8 @@ API token and webhook actions:
 - `POST /api/webhook-deliveries/{id}/retry/`
 
 Frontend rule: never display or store raw credential values after submission. Use masked values and connector/bot-channel status endpoints. Provider credentials belong in connector credential/provider service layers; UI should show safe status, setup state and recovery actions, not raw tokens, webhook secrets or provider payloads.
+
+Canonical AI-agent UI sends the exact `bot_channel` when starting WhatsApp Embedded Signup or Instagram OAuth. The signed OAuth state binds completion to that channel; clients must not select the first channel in a business. Omission is compatibility-only and must not be used by new UI flows.
 
 ## Analytics
 

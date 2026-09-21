@@ -2,6 +2,26 @@
 
 Phase 7 turns subscription plans from display-only data into enforceable product limits.
 
+## Owner-approved V1 commercial model — 2026-09-16
+
+Read [V1 product rules](../product/V1_PRODUCT_RULES.md), section 8. The primary
+subscription is priced by employee count; AI is billed separately for actual
+usage under explicit per-request tariffs, without a monetary spending ceiling
+or an approved hard request package. This final owner decision supersedes the
+earlier questionnaire answer about a hard AI limit.
+
+Subscription payment/activation is automatic. Expiry has a three-day grace
+period followed by read-only access. The payment provider, prices, billable
+request definition, failed/retried request accounting, seat counting and exact
+read-only/background behavior remain open; do not infer them from old defaults.
+
+The quota inventory and historical verification below describe the existing
+foundation, not certification of the new commercial model. No guards or defaults
+were removed by this documentation change. Preserve authorization, abuse/rate
+controls and retry safety; reconcile commercial AI quota behavior in a separately
+approved implementation task. This does not authorize changing code, making
+payments or declaring existing limits compliant.
+
 ## Goal
 
 All paid limits must go through one service layer instead of scattered checks like:

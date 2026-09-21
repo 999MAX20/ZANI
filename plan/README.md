@@ -1,6 +1,6 @@
 # ZANI Plan Index
 
-Last cleaned: 2026-06-19
+Last reconciled: 2026-09-14
 
 This folder contains planning documents and engineering rules that are still useful for implementation. Historical prompt packs and missing roadmap references must not be treated as source of truth.
 
@@ -24,10 +24,12 @@ For CRM backend/business logic production work:
 ../docs/billing/entitlements.md
 ```
 
-For product/page readiness context:
+For current backend/pilot readiness:
 
 ```text
-readiness_plan.md
+../docs/pilot/backend-open-logic-register.md
+../actual_docs/PRE_PILOT_CODE_READINESS_MASTER.md
+../actual_docs/APP_FUNCTIONAL_CERTIFICATION.md
 ```
 
 For frontend UI/design work:
@@ -63,13 +65,18 @@ For testing:
 
 ## Active Documents In This Folder
 
-### Product Readiness
+### Historical planning redirects
 
-```text
-readiness_plan.md
-```
+`readiness_plan.md`, `commit_pr_split_plan_2026_06_08.md`,
+`stabilization_audit_2026_06_08.md` and `production_qa_2026_06_09.md` are archive
+redirects, not active implementation queues. Use the current backend register
+and certification documents above.
 
-Use for broad product readiness, page status, known gaps and prioritization context.
+`deals_reference_blueprint.md` remains reference context, subordinate to the
+current CRM production contract; it is not an authorized pilot backlog.
+
+See the [documentation audit](../docs/operations/technical-documentation-audit.md)
+for every classification and replacement.
 
 ### UI / UX Reform
 

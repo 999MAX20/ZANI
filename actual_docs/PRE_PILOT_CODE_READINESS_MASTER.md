@@ -7,6 +7,26 @@
 - Scope: final repository work required before a controlled pilot, excluding live infrastructure and new product features
 - Owner: ZANI manager workflow
 
+## Current-status override — 2026-09-14
+
+Baseline percentages, severity counts and early open-item descriptions below
+are historical assessments, not a current executable backlog. PP-SEC-001
+through PP-SEC-010 completion records are not reopened by earlier paragraphs.
+BE-GAP-001 is closed at `21f5eb0`; FC-004/006 pass at `d4f7c8f` (962-test full
+gate); UX-3 is done.
+
+Remaining: FC-003/008, BE-REM-007, FB-008 live-provider proof, FB-009 manual
+screen-reader evidence and UX-4. Current uncommitted AI/channel changes require
+new acceptance: 54 focused tests pass, but two website-chat paths return 403
+instead of 201. BE-GAP-004 remains a policy conflict. BE-GAP-006 is
+PARTIAL/ENV_GATED: connector sync/retry is synchronous, unlike existing jobs.
+
+Use the [backend register](../docs/pilot/backend-open-logic-register.md) for
+remaining IDs and the [2026-09-14 audit](../docs/pilot/backend-development-audit.md)
+for committed-vs-WIP evidence. No current readiness percentage is asserted.
+This master remains the sequence owner; the correction neither authorizes
+implementation nor closes an environment gate.
+
 ## 1. Purpose
 
 This document is the final code-readiness master before the controlled ZANI

@@ -1,6 +1,45 @@
 # CRM Production Layer Plan
 
-Last updated: 2026-09-08
+Last updated: 2026-09-21 (bounded W05/W06 local evidence; historical closures preserved).
+
+## Локальная CRM и допуск клиники — 2026-09-21
+
+[Конечный остаток до пилота](../pilot/local-crm-completion.md) связывает
+существующие V1/FC/BE-GAP ID с кодом, незавершённой работой и условиями двух
+рубежей: локальная классическая CRM; затем реальная клиника с WA/Instagram,
+полноценным ИИ, рабочей оплатой подписки/ИИ и безопасной средой для платного пилота.
+Это inventory, не автоматическая
+выдача всех следующих задач. Общий UI/UX и marketplace development сейчас вне scope.
+
+В каноническом локальном WIP V1-W05 запрещает архив клиента с незавершённой
+работой, включая открытые/ожидающие сотрудника диалоги; оба soft-archive пути
+требуют утверждённое `clients:delete`. V1-W06 получил API-доказательства
+отключения доступа и сохранения/переназначения работы без изменения runtime.
+Точные gates и ограничения приведены в inventory. Это локальная backend-проверка,
+не release/UI/deploy-приёмка. Закрытые FC/AUD-027 не переоткрываются.
+
+## Утверждённая граница первой платной версии — 2026-09-16
+
+[Правила V1](../product/V1_PRODUCT_RULES.md) фиксируют ответы владельца:
+административная CRM для стоматологий, оба рабочих цикла, три AI-направления,
+WhatsApp/Instagram/Telegram и форма сайта, ручной журнал денег клиентов,
+подписка по сотрудникам и отдельная оплата AI-запросов без денежного потолка.
+Ресурс записи — сотрудник; медицинские карты и бронирование кабинетов не входят.
+
+Это изменение целевых требований, а не повторная приёмка реализации. Старые
+PASS и закрытые фазы ниже относятся к своим версиям. FC-003/FC-008, результаты
+полного аудита и отдельные исправления автоматически не закрываются. Следующий
+ограниченный шаг — матрица соответствия V1 с доказательствами, а не новый общий
+аудит или автоматическая реализация всего списка. Неутверждённые детали указаны
+в разделе 10 правил V1.
+
+Documentation reconciliation 2026-09-14: completed `CRM_IMPLEMENTATION_TASKS.md`
+and `CRM_AUDIT_REQUIRED_CHANGES.md` now redirect to preserved archive records.
+They must not reopen CRM foundation work. This production contract remains
+active; remaining backend IDs are owned by
+[backend-open-logic-register](../pilot/backend-open-logic-register.md).
+Historical phase notes do not override later canonical CRM decisions.
+No new CRM behavior or production readiness is claimed by this docs audit.
 
 Цель: довести CRM до production-уровня слоями по всему продукту, а не полировать одну страницу изолированно. Этот документ является текущим source-of-truth для CRM hardening.
 
@@ -17,6 +56,16 @@ domain invariants -> state machines -> audit/activity -> API contracts -> fronte
 ## 2. Текущее Состояние
 
 ### Backend Boundaries
+
+Update 2026-09-16: AUD-027 secondary-read correction is locally verified on
+`codex/aud027-access-projections`, based on audited `fc22f727`, and remains
+uncommitted/not integrated. It reuses existing permissions for CRM cards,
+client annotations, deal previews/boards and referenced history, including
+custom-field visibility. The isolated affected gate passed 189 tests, including
+17 new regressions; browser evidence covers owner, operator, manager and specialist.
+See [scope, snapshot and exact gate](../security/aud027-crm-projections.md).
+This does not reopen completed CRM foundation work, close other audit defects,
+or certify the full Inbox → booking → reconciled Analytics business cycle.
 
 Update 2026-09-08: BE-GAP-003 closes formal merchant-journey evidence for
 FC-006 and deterministic failure/data-state evidence for FC-004. Lead CSV
@@ -232,6 +281,14 @@ Historical remaining notes, superseded or narrowed by later phases:
 - lead activity/audit and automation coverage was advanced by Phase 8 and Phase 10.
 
 ### Clients
+
+Update 2026-09-14: added the bounded manual client payment journal, available
+from the Clients header and both client card surfaces. Receipts and partial/full
+refunds use one business-scoped ledger with durable submission identity,
+dedicated permissions, atomic audit/activity and merge preservation. Deal and
+appointment lifecycle is unchanged. Manual records are not bank/1C confirmation;
+1C reconciliation and analytics integration remain separate work. Contract and
+verification: [Client payments](client-payments.md).
 
 Update 2026-07-09: Phase 4 pass 2 closed consent/source attribution at the current CRM scope. Clients now store `source_detail` and `source_context_json`; public lead forms copy campaign/domain/form attribution into client records; merge snapshots preserve source attribution; CRM card payloads include `OutreachConsent` status summaries for outreach channels; the client drawer shows source attribution and consent status. Migration `clients.0005_client_source_attribution` was applied to the local dev database.
 

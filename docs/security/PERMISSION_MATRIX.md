@@ -2,6 +2,18 @@
 
 This file is the working reference for role-aware behavior in ZANI.
 
+## Approved V1 business policy — 2026-09-16
+
+[V1 product rules](../product/V1_PRODUCT_RULES.md), sections 5–6, require ready-made
+roles with bounded adjustments, operator-confirmed AI lead/task/draft-deal
+creation, and support diagnostics/notes by explicit permission. Booking,
+rescheduling/cancellation and deal-result changes are staff actions, not
+approval-triggered AI writes. An operator's approval never substitutes for the
+underlying server permission. Any mismatch in the existing matrix/presets is a
+verification/remediation gap, not authorization to elevate the actor implicitly.
+Support grants, privileged MFA, tenant isolation and audit remain mandatory.
+This records target policy only; no permission code or role preset was changed.
+
 ## Roles
 
 - `platform_admin`: manages the platform and all operational tooling.
@@ -55,7 +67,8 @@ This file is the working reference for role-aware behavior in ZANI.
 | Conversations | business_owner, manager, assigned employee | manager, assigned employee | send, close, assign, AI pipeline require allowed role | managers/employees, not owner by default |
 | Leads | business_owner, manager | business_owner, manager | convert/link/assign | assigned manager |
 | Deals | business_owner, manager | business_owner, manager | won/lost, value changes, pipeline move | owner for high-value/risk, manager for assigned |
-| Clients | business_owner, manager | business_owner, manager | merge/delete/archive require owner or explicit permission | assigned manager |
+| Clients | business_owner, manager | business_owner, manager | merge/delete/archive require owner or explicit permission; POST archive and DELETE soft archive both require clients:delete (owner decision 2026-09-21) | assigned manager |
+| Client payments | `payments:view` AND scoped `clients:view`; owner/admin, manager by default | `payments:create`; manager may record received money | `payments:manage` for bounded refunds; owner/admin by default; no generic edit/delete; underlying deal/appointment view permission required for links | no payment notifications in manual-journal phase |
 | Appointments | owner/admin/manager/operator; specialist in `OWN` scope | owner/admin/manager/operator; specialist only for an appointment whose same-business active `resource.linked_user` is that user | book/reschedule/cancel/no-show/complete; cancel and no-show require reason | lead responsible user, linked resource user, actor or owner |
 | Tasks | business_owner, manager, assigned employee | business_owner, manager | lifecycle, assign, watch and comment require backend `tasks:update`; cancel requires reason; task links may point to client, lead, deal, appointment or conversation; overdue work queues expose backend watch/escalate/critical metadata; workload view is `tasks:view` gated and tenant-scoped | assigned task notifications target the active assignee; unassigned tasks route to manager/admin/operator roles with owner fallback; normal task notifications respect preferences, high/urgent bypass them |
 | Integrations | business_owner, platform_admin, support with grant | business_owner, platform_admin | connect/disconnect/rotate token, health check, failed sync retry | owner/admin/support by event |
@@ -85,6 +98,19 @@ This file is the working reference for role-aware behavior in ZANI.
 - Unassigned and SLA-risk handoffs create manager attention notifications instead of silently remaining in a personal queue.
 
 ## Capability Rules
+
+### Nested CRM read projections (AUD-027)
+
+Read access to a parent client, appointment or shared pipeline is not read
+access to all its children. Cards, list annotations, next-task previews,
+board deal rows and CRM-referenced history must apply each resource's existing
+VIEW scope/capability before serialization, counting or limiting. Custom-field
+view roles and sensitive-field masking still apply inside nested payloads.
+The bounded implementation and integration boundary are recorded in
+[AUD-027 evidence](aud027-crm-projections.md); this does not certify unrelated
+generic mutation endpoints or change merchant role presets.
+
+### Module availability
 
 - Business capabilities are backend-enforced for inbox, leads, clients, appointments, tasks, deals, analytics, AI, automations and integrations.
 - Business type is descriptive metadata in the generic CRM layer. Dentistry

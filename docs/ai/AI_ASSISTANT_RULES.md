@@ -2,6 +2,22 @@
 
 This document defines what ZANI AI features may do, what they must not do, and how they should use business data.
 
+## Approved V1 policy — 2026-09-16
+
+[Owner-approved V1 rules](../product/V1_PRODUCT_RULES.md), section 6, control
+first-release behavior where the historical contracts below differ. Automatic
+client dialogue and automatic creation of a new client card from an incoming
+contact are allowed within the approved scope. AI-created leads, tasks and
+draft deals require confirmation of the particular action by an authorized
+operator. Booking, rescheduling/cancellation and deal-result changes are
+suggestions only: a staff member performs the actual action.
+
+This is a target policy, not proof of implementation or authority to change code.
+Legacy pipeline modes must be checked for gaps; none may silently bypass this
+matrix. Employee assistant, customer bot and owner analyst are all required V1
+features. Ordinary CRM work continues without AI. Separate AI request pricing
+has no monetary spending ceiling; see V1 section 8 for the final owner correction.
+
 ## Product Role
 
 ZANI AI is a business assistant and analyst. It helps owners and teams understand what happened, what matters now and what action should happen next.
@@ -67,7 +83,10 @@ Daily owner brief and next-best-action output must be deterministic or source-gr
 
 AI suggestions can be automatic. AI actions need role-aware confirmation when they affect business state.
 
-Confirmation is required for:
+Outside the explicitly approved V1 automatic dialogue/client-intake exceptions,
+confirmation is required for the actions below. For V1 booking, rescheduling,
+cancellation and deal-result changes, the stricter suggestion-only rule above
+applies: approval does not authorize an AI tool to execute them.
 
 - sending a message to a client;
 - creating or moving a deal;
@@ -84,7 +103,10 @@ Critical mutating AI tool calls that create or change CRM records must require a
 
 Approval creation is not a decision. New `ApprovalRequest` records must always start as `pending`; `approved`, `rejected`, `expired` and `executed` states are server-side transitions only. Even after a matching approval is present, mutating AI tools must still pass the user's underlying CRM permission such as `clients:create`, `leads:create`, `tasks:create` or `deals:create`.
 
-Conversation CRM pipeline confirmation modes:
+Historical conversation CRM pipeline modes (implementation inventory, not V1
+authorization). The auto-create/booking behavior described below is superseded
+as a target by the approved V1 matrix. Do not present these modes as accepted
+V1 behavior until an exact-version implementation check confirms compliance:
 
 - `suggest_only`: AI stores qualification and suggested next action only. It must not create client, lead, deal, task or appointment records.
 - `auto_lead_task`: AI may create client, lead and manager task after confidence, fallback and risky-intent guards pass.
@@ -103,6 +125,18 @@ For conversation -> CRM pipeline flows:
 4. The result must be visible in the conversation timeline and CRM entity history.
 5. Important steps should create BusinessEvents.
 6. Handoff, bot-paused or closed conversations are stop states for auto-pipeline execution. AI must not qualify, mutate CRM records, book appointments or send automatic replies in those states.
+7. Agent pause/draft or missing active profile/business knowledge blocks autonomous
+   AI, not incoming transport. An explicitly active channel must still deliver
+   authenticated messages to Inbox and permit authorized manager replies.
+   Channel disablement is a separate operation. Recheck persisted eligibility
+   after provider work and at outbox delivery; do not send an old queued bot reply
+   merely because the agent was ready when it was created. An already dispatched
+   provider request cannot be recalled by this local check.
+
+Website contact capture and explicit client appointment confirmations are not
+AI qualification; disabling autonomous AI must not silently disable those
+existing deterministic CRM flows. Manually invoked drafts and approved AI tools
+continue to use their existing permissions and confirmation gates.
 
 ## Analyst Output Format
 

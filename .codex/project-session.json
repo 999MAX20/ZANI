@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "projectName": "Platforma.CRM",
+  "projectId": "local-3368c3df041be97f9549005fc6749ad2",
+  "canonicalRoot": "C:\\Users\\user\\Desktop\\Zani",
+  "generation": 1,
+  "primaryThreadId": "01a0c36e-33aa-7c72-be9b-72624dd2c739",
+  "successorThreadId": null,
+  "transition": "idle",
+  "autoHandoffEnabled": true,
+  "hookActivationStatus": "REQUIRES_REVIEW_AND_TRUST",
+  "handoffPath": "actual_docs/PROJECT_HANDOFF.md",
+  "checkpointPath": "docs/testing/task-state/PRIMARY-SESSION.md",
+  "protocolPath": "docs/testing/SESSION_ROLLOVER.md",
+  "retiredThreadIds": [
+    "01a02906-d0a3-7820-80f2-adad5cf5a613",
+    "01a02915-a366-7150-91bb-ce938cd50138",
+    "01a02954-6edd-74f2-8944-794408801f0d",
+    "01a02916-4955-7491-a51e-6372a6d17ca8"
+  ],
+  "sourceThreadIds": [
+    "01a02906-d0a3-7820-80f2-adad5cf5a613",
+    "01a02915-a366-7150-91bb-ce938cd50138",
+    "01a02954-6edd-74f2-8944-794408801f0d",
+    "01a02916-4955-7491-a51e-6372a6d17ca8"
+  ],
+  "lastAuthorization": "Owner requested consolidation and automatic same-scope handoff on 2026-09-21; no additional product implementation authorized."
+}

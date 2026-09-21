@@ -5,8 +5,11 @@ This document is the source of truth for the ZANI privileged-account multi-facto
 ## Policy
 
 - `AUTH_PRIVILEGED_MFA_REQUIRED=True` is mandatory for staging, production and the first paid pilot.
-- The policy applies to platform administrators, business owners and active business administrators.
-- Manager, operator and specialist roles are not forced into MFA by this phase.
+- The policy applies to superusers, platform administrators, platform managers,
+  business owners and active business owner/administrator memberships, matching
+  `apps/accounts/mfa.py:is_privileged_mfa_user`.
+- Business manager, operator and specialist roles alone are not forced into MFA
+  by this phase. This exclusion does not apply to platform managers.
 - A user with an already confirmed MFA device must continue to complete MFA even if the mandatory environment flag is temporarily disabled.
 
 ## Authentication flow

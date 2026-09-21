@@ -588,7 +588,7 @@ All references are stored under `C:/Users/user/.codex/generated_images/01a02954-
 | Services | solid CRUD | medium table/modal refactor | no linked-employee relation in `Service` |
 | Resources | solid CRUD | medium table/modal refactor | no linked-services/capacity contract |
 | Working hours | solid weekly workflow | medium composition refactor | one interval per day; no break/multiple-interval model |
-| Timeline | basic read view | major filtering/detail refactor | safe metadata only; export and actor filtering need contracts |
+| Timeline | reference table/mobile cards and event details implemented locally on 2026-09-14 | isolated branch awaits integration and visual baseline publication | server actor/date filters verified; export excluded |
 
 ### Shared target anatomy for these pages
 
@@ -967,7 +967,7 @@ The order deliberately validates the shared pattern on the smallest supported CR
 - [x] Implement shared operational table/inspector foundation and migrate Services.
 - [ ] Implement Resources reference composition.
 - [ ] Implement Working hours reference composition without unsupported interval fields.
-- [ ] Implement Timeline reference composition and server-backed filtering.
+- [x] Implement Timeline reference composition and server-backed filtering (isolated local phase, 2026-09-14; integration and cloud baseline are separate).
 - [ ] Implement Integrations reference composition without duplicating provider ownership.
 - [ ] Implement Outreach reference composition without adding unsupported channels.
 - [ ] Implement AI-agents reference composition while preserving canonical routes and grounding.
@@ -1302,3 +1302,276 @@ Verification evidence:
 ## Definition of done
 
 The implementation is complete only when the checked tasks above are backed by the actual diff and verification evidence. The final report must list changed business/UI areas, checks run, checks skipped, permission/API impact, i18n impact, AI/notification impact and remaining visual risks.
+
+### Phase 7 follow-up — AI-agent ownership, readiness and responsive closeout (2026-09-13)
+
+Product boundary:
+
+- `/app/ai-agents/:id/channels` is the only merchant UI for assigning and configuring Website, Telegram, WhatsApp and Instagram endpoints for one exact AI agent.
+- `/app/integrations` remains the business-level connection center for external data, marketplace and system services. It must not render duplicate messenger credential forms.
+- `BusinessConnector` remains the internal business-level credential and provider-health layer. It is not a second merchant-owned messenger setup screen.
+- Until an explicit multi-account/provider relation is designed, one business may assign at most one Telegram, one WhatsApp and one Instagram endpoint across its agents. Website channels remain per-agent.
+
+Interaction and layout contract:
+
+- Selecting `Connect` or `Configure` on a channel card opens the existing provider setup dialog directly. No intermediate `Create channel` CTA is allowed.
+- A new missing channel is ensured idempotently for the selected agent before the setup dialog opens; another agent's channel must never be selected implicitly.
+- The workspace uses the available authenticated content area up to 1720px. The desktop agent list is 260–300px; below the `xl` breakpoint it becomes a compact selector and the editor uses the full remaining width.
+- Section routes preserve one mounted editor draft across profile, channels, knowledge, actions and test. Section-specific loading/error states must not block unrelated sections.
+- Dialogs trap focus, close on Escape and restore focus to the exact channel CTA even when that CTA was temporarily disabled during asynchronous channel creation.
+- A runtime agent requires an active dedicated profile, at least one active channel and at least one active business knowledge item. Legacy records whose database status is active but whose readiness is false are labelled as launch-blocked and are rejected by public/provider runtime entry points.
+
+Checklist:
+
+- [x] Separate messenger channel ownership from `/app/integrations` without removing the internal connector credential layer.
+- [x] Ensure exact-agent channel creation and OAuth binding; reject another agent's messenger endpoint.
+- [x] Replace the two-step create/setup dialog with direct provider setup.
+- [x] Enforce draft → ready → active lifecycle actions and runtime readiness on public/provider entry points.
+- [x] Preserve permissions, tenant isolation, audit history and safe credential handling.
+- [x] Use section-scoped data states and preserve unsaved drafts across section navigation.
+- [x] Verify desktop/tablet/mobile containment, keyboard tabs, modal focus trap/Escape/focus return and RU/KK/EN parity.
+- [x] Run focused backend tests, Django check, frontend build, bundle budget and diff checks.
+
+Verification evidence:
+
+- `manage.py check` passed; `apps/bots/tests_readiness.py` passed 11/11 and `apps/onboarding/tests.py` passed 11/11.
+- Telegram, WhatsApp, Instagram and encrypted-credential coverage passed 68/68. The suite verifies draft-after-config, exact OAuth channel binding, fail-closed credential resolution, provider permissions and webhook behavior.
+- `npm run build` passed with 4858 aligned RU/KK/EN keys and both application/widget builds. `npm run check:bundle` passed; the AI Agents chunk is 71.3 kB before gzip.
+- `npm run audit:interaction` passed across 12 authenticated `/app` routes with no blocking issues; `/app/ai-agents` had no missing or disabled target action. The audit runner now records disabled actions instead of attempting to click them.
+- `npm run audit:visual` passed across 13 authenticated views. `/app/ai-agents` and `/app/integrations` both reported zero horizontal overflow, zero transparent-surface issues and zero API errors.
+- Authenticated Chrome checks covered a 1024px tablet and 390px mobile viewport with no document overflow, route-backed ArrowRight tab navigation, direct Telegram setup, initial dialog focus, Escape close and exact trigger focus return.
+- `manage.py makemigrations --check --dry-run` reported no changes and `git diff --check` passed.
+- One local Telegram draft channel was created for agent `2` while verifying first-time direct setup. No credential was entered and the channel remains in setup state.
+
+### Phase 7 security follow-up — channel ownership boundary (2026-09-13)
+
+Scope: close generic channel/connector configuration mass assignment and enforce
+same-business provider binding. Preserve dedicated setup, OAuth, encrypted
+credentials, role checks and existing webhook idempotency. No visual redesign,
+onboarding implementation, inbox/pause behavior change, migration or live rollout.
+Earlier Phase 7 checks do not certify these newly discovered attack paths.
+
+- [x] Reject generic mutation of messenger configuration, verified provider identity and channel ownership; preserve supported draft creation and harmless updates.
+- [x] Resolve webhook credentials only to a matching provider channel in the connector's Business, including malformed or historically poisoned bindings.
+- [x] Keep activation dependent on setup-owned verification rather than generic connector health, and invalidate verification when credentials are changed.
+- [x] Cover bypasses, allowed setup, permission denial, tenant isolation and delivery replay with isolated API/service regression tests.
+- [x] Run scoped backend, Django system/migration and diff gates; document exact evidence and remaining limitations in the integration docs and defect register.
+
+Implementation and acceptance evidence:
+
+- Local, uncommitted work on `codex/ai-channel-ownership-hardening`; unrelated
+  pre-existing worktree changes were preserved. No commit, push, live data
+  migration or dev-server startup was performed.
+- The generic write boundary protects server-owned configuration, provider
+  identity and channel ownership. Existing bound credentials are managed only
+  through dedicated setup. Exact configuration echoes and allowlisted pending
+  connection-request metadata remain compatible.
+- Business-scoped locks and save-time revalidation protect ownership and
+  credential binding; a setup revision rejects delayed provider/OAuth results.
+  Provider requests stay outside the commit lock. Reconnect preserves a renamed
+  bound connector, and WhatsApp OAuth verifies the returned phone identity.
+- Permissions impact: existing role restrictions remain; generic API authority
+  is reduced. No notification, BusinessEvent schema, AI behavior, migration or
+  environment-variable contract was added. Rejected cross-tenant webhook
+  regression cases assert no CRM conversation/message/event persistence.
+- Final scoped gate: **232 tests passed** in 148.905 seconds, including **32 new
+  regressions** in `tests_channel_ownership` and `tests_channel_setup_consistency`.
+  The selection also covers existing delivery replay, dedicated provider setup,
+  readiness, onboarding and tenant-isolation tests. Django system check passed;
+  migration drift check reported `No changes detected`.
+- Python `compileall -q` passed for the 13 changed Python implementation/test
+  files; `git -c core.safecrlf=false diff --check` passed.
+
+Exact final scoped runner (PowerShell, repository root; isolated in-memory
+SQLite, safe verification settings, no real network or merchant database):
+
+```powershell
+@'
+import os, sys
+from pathlib import Path
+from scripts.codex_verify import safe_environment
+safe = safe_environment(database_path=Path('unused-channel-tests.sqlite3'), python=sys.executable, django_port=8191, frontend_port=5191)
+safe.update(DATABASE_URL='sqlite:///:memory:', ALLOWED_HOSTS='testserver,localhost,127.0.0.1')
+os.environ.clear()
+os.environ.update(safe)
+os.environ['DJANGO_SETTINGS_MODULE'] = 'config.settings'
+sys.argv = ['manage.py', 'test']
+import django
+django.setup()
+from django.core.management import call_command
+from unittest.mock import patch
+import logging
+logging.getLogger('zani.request').setLevel(logging.ERROR)
+logging.getLogger('django.request').setLevel(logging.ERROR)
+with patch('socket.socket.connect', side_effect=AssertionError('Real network is forbidden in verification')):
+    call_command('check')
+    call_command('makemigrations', check=True, dry_run=True, verbosity=1)
+    call_command('test', 'apps.integrations', 'apps.bots.tests_readiness', 'apps.onboarding', 'apps.core.tests_tenant_isolation', verbosity=1, interactive=False)
+'@ | .\.venv\Scripts\python.exe -
+```
+
+Baseline failures and skipped gates:
+
+- An earlier broader selection (`apps.integrations apps.bots apps.onboarding
+  apps.core.tests_tenant_isolation`) ran 279 tests and failed with 15 failures
+  and one error. Three integration compatibility failures were corrected and
+  are green in the final gate. The remaining 13 website-chat/readiness failures
+  concern fixtures without the active profile/knowledge now required by the
+  previous readiness phase. Website runtime/readiness behavior was not changed
+  in this phase. This is not a green all-bots/full-backend certification.
+- Two representative failures were rerun separately in a fresh in-memory DB:
+  `apps.bots.tests.BotsFoundationTests.test_public_website_chat_creates_conversation_message_client_and_lead`
+  and `apps.bots.tests.InboxBackendTests.test_public_website_chat_flows_into_inbox_and_manager_reply_updates_state`.
+  Both still return 403 instead of the old expected 201. Correct readiness
+  fixtures and test the pause/inbound policy in the separate follow-up; do not
+  weaken readiness solely to make the old assertions pass.
+- Full `scripts/codex_verify.sh` / `scripts/codex_verify.py --mode full`, the
+  complete Django suite, dependency/security gates and frontend build were not
+  run: this is a scoped backend correction with no frontend/dependency changes,
+  and the broader backend probe has the baseline failures above. Scoped
+  constituent checks were used; no commit/base was fabricated for the full runner.
+- Browser/responsive/accessibility and live-provider checks were not run: the
+  dev server is off and live credentials/provider traffic are out of scope.
+  Race regressions use deterministic interleavings in SQLite, not parallel
+  PostgreSQL transactions; deployment-engine concurrency remains unverified.
+- Legacy Meta channels without setup-owned verification need a dedicated
+  connection test before reactivation. Unbound encrypted credentials are not
+  automatically assigned to a channel; explicit setup is required. Existing
+  stored credentials are not deleted or migrated speculatively.
+
+Next phase, not authorized by this checklist: separate AI pause from inbound
+transport eligibility; then address editor/save UX and safe first-run onboarding.
+
+### UI test tooling — local foundation (2026-09-14)
+
+At the owner's request, tooling setup is tracked separately in
+`docs/testing/ui-testing-toolkit.md`. It adds an isolated shared-component
+catalogue and guarded visual publishing, not another redesign phase. Existing
+AI pause/inbound, editor/save UX and onboarding tasks are not closed by this work.
+
+## Phase 4 — Timeline reference implementation (2026-09-14)
+
+Status: IMPLEMENTED AND LOCALLY VERIFIED. Isolated local worktree `Zani-timeline-redesign`, branch
+`codex/timeline-redesign`; the main dirty checkout is not switched or edited.
+Scope: `/app/timeline` only, using the approved Timeline reference and shared
+table/toolbar/inspector primitives. No export, raw metadata/IP/internal IDs,
+new CRM lifecycle actions, provider calls, notifications, AI, migrations or env
+contracts. Existing `analytics:view` and Business isolation remain mandatory.
+
+- [x] Extend the existing activity API with bounded server filters, actor labels/options and page-size control; prove allowed reads, denied reads and tenant isolation.
+- [x] Implement the localized event table/mobile cards, stable search/category/date/actor filters and pagination with URL-backed state.
+- [x] Implement selected-event desktop details/mobile drawer, safe metadata and permission-aware entity navigation; preserve keyboard/focus context.
+- [x] Verify representative loading, empty, error, forbidden, long RU/KK/EN text and desktop/tablet/mobile rendering with no real provider traffic (manual coverage below, not an exhaustive all-role/all-state certification).
+- [x] Run focused backend, frontend build/bundle and browser checks; record exact results and skipped gates.
+
+### Implemented composition and behavior
+
+- Shared `DataTable` gains opt-in date separators; existing callers retain their
+  default table structure. `TimelineEventTable` renders event, client/object,
+  actor, business-local time and semantic category. Narrow screens use cards.
+- `TimelineToolbar` uses shared search, category and actor controls plus date
+  inputs. Actor selection has server search/pagination and a safe selected-label
+  lookup. Event filters, page, page size and selected event are URL-backed.
+- `useTimelineSearchParams` preserves successive updates before React Router's
+  next render; rapid changes to the two dates do not revert the other filter.
+- Details use `OperationalWorkspace`/`OperationalInspector`: an inline column
+  at 1536px and above, otherwise a drawer. Enter opens/focuses details; Escape
+  and Close return focus to the originating visible row/card. The mobile drawer
+  traps Tab/Shift+Tab. Selection is cleared after a settled filtered page no
+  longer contains that event; pending results from another business are never
+  used as placeholders.
+- Details reuse existing category and field-label contracts but intentionally
+  do not feed arbitrary metadata into the generic `timelineDetails()` renderer:
+  `timelineDetailTransitions` validates and localizes only status, amount and
+  appointment-time transitions. Unsupported details are omitted, not invented.
+- Background refresh keeps current rows interactive. Filter/page transitions
+  block stale result actions. Empty history, no filter matches, loading, error
+  with retry/reset and forbidden access are separate states.
+- Mobile pagination uses the shared compact variant and the workspace reserves
+  bottom-navigation clearance. At 320px the page-size control wraps; it is not
+  clipped. KK dates use numeric months to avoid incomplete Chromium locale-data
+  fallbacks such as `M09`.
+
+### Verification — actual runs
+
+Isolated code root: `C:\Users\user\Desktop\Zani-timeline-redesign`.
+Python interpreter: `C:\Users\user\Desktop\Zani\.venv\Scripts\python.exe`.
+Tests used `scripts.codex_verify.safe_environment`, in-memory SQLite,
+`ALLOWED_HOSTS=testserver,localhost,127.0.0.1`, and a patched
+`socket.socket.connect` rejecting network traffic. Management commands invoked:
+
+- `manage.py check` — passed.
+- `manage.py test apps.activities.tests_timeline_workspace apps.activities.tests apps.core.tests_tenant_isolation` — **32/32 passed**.
+- `manage.py makemigrations --check --dry-run` — passed, no changes detected.
+- `cd frontend && npm run build` — passed: 4863 aligned RU/KK/EN keys, TypeScript, app and widget production builds.
+- `cd frontend && npm run check:bundle` — passed; app shell 269.1 KiB raw, all JS chunks under 500 KiB.
+- `node --test scripts/tests/timeline-presentation.test.mjs scripts/tests/action-color-policy.test.mjs` — **11/11 passed** (5 Timeline helpers and 6 shared action-color contracts).
+- `git diff --check` — passed. No staging, commit, push or PR was performed.
+
+The first test iterations exposed and corrected test-fixture mistakes (a Django
+TestCase `client` attribute collision and duplicate blank test-user emails).
+The initial frontend build exposed two incorrect translation-key references;
+these were corrected before the passing runs. No failed run is counted as proof.
+
+### Live browser acceptance
+
+Owned loopback servers used ports 8293/5293, the isolated worktree and a new
+temporary SQLite database. The standard smoke seed plus 24 synthetic tasks and
+one long-name synthetic client produced 26 events. Real merchant databases,
+provider credentials and external delivery were not used.
+
+After verification both owned servers were stopped and the temporary test
+database directory was automatically removed. This discarded only reproducible
+synthetic fixtures; the user's databases and dev processes were untouched.
+
+- Desktop 1600×1000 RU/EN: grouped event table, readable columns, inline details,
+  long client name wrapping, semantic category, Enter focus, Escape return.
+- Tablet 1024×900 KK: table and overlay details rather than a squeezed two-column
+  workspace. Mobile 390×844 RU and 320×667 KK: cards, full-height details, no
+  horizontal document overflow, pagination above bottom navigation.
+- Mobile Tab and Shift+Tab cycle inside details; closing returns focus to the
+  originating card. Long client text remains available in the details link.
+- Search preserves input focus, resets page and shows a recoverable empty state.
+  Actor search/selection reduced the owner result set to 25 events; page 2 showed
+  events 21–25. Category `task` returned 24 events.
+- Native date keyboard changes preserved both bounds in the URL; reload retained
+  `date_from=2026-09-13&date_to=2026-09-15` with category `task` and 24 results.
+- Invalid category returned the localized shared error with Retry/Reset, not an
+  empty-history state. Reset restored the table. Actual loading was observed.
+- Operator login followed by `/app/timeline` showed access denial and no events;
+  matching API denials and cross-business cases passed in the backend suite.
+- Related Task link opened the real synthetic task detail. The Services list
+  still rendered its three seeded rows and action controls without date groups.
+
+### Explicit exclusions and baseline findings
+
+- **Not integrated into the main dirty checkout.** No existing in-progress
+  UI/backend changes were copied, replaced or reverted. This branch started from
+  `4ba3cbf9fddcc6e1baa172b494c781550c090693` and remains uncommitted locally.
+- Chromatic/Storybook publication of this page was **not run**. The toolkit is
+  in the main checkout's other work; do not treat its current snapshots as a
+  baseline for this new Timeline. Integration and visual acceptance remain open.
+- Full `scripts/codex_verify` committed-range gate was **not run**: the required
+  task base equals HEAD until this isolated implementation has a commit. An
+  unrelated older base was not substituted to manufacture a passing range.
+- Full Playwright suite, automated axe scan, Safari/Firefox, all role/locale/state
+  combinations and offline/retry stress were **not run**. The mixed-flow gate
+  here consists of scoped automated checks and the reachable manual browser
+  evidence above, not a claim of complete application certification.
+- `daily-workspaces-policy.test.mjs` was additionally run: **4 passed, 2 failed**
+  (`owner dashboard fetches and renders capability-scoped daily modules` and
+  `owner AI brief does not substitute unsourced local recommendations`). The
+  tested Dashboard sources and that test file are unchanged from HEAD, confirmed
+  by `git diff --quiet HEAD -- frontend/src/features/dashboard frontend/scripts/tests/daily-workspaces-policy.test.mjs`.
+- Live dictionary edits caused a dev-only `useI18n ... I18nProvider` HMR error;
+  cold reload restored the page. Cold loads and the final production build pass;
+  the shared provider/HMR behavior was not redesigned in this phase.
+- The existing Task detail showed untranslated `tasks.statusLabel.open` and
+  `tasks.priorityLabel.normal` keys in EN. That destination-page issue is outside
+  this phase and was not hidden by changes to Timeline.
+
+Remaining handoff: integrate this reviewed bounded diff with ongoing main work,
+then publish/accept the Timeline visual baseline. Do not mark the global
+all-pages certification checklist complete on the strength of this phase.
+
+Stop after this phase. Integrations, Outreach and AI-agent follow-ups are excluded.

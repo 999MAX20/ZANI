@@ -1,7 +1,20 @@
 # Active ZANI Technical Documentation
 
+Startup entrypoint after task consolidation (2026-09-21):
+[PROJECT_HANDOFF.md](PROJECT_HANDOFF.md),
+[PRIMARY-SESSION](../docs/testing/task-state/PRIMARY-SESSION.md) and
+[SESSION_ROLLOVER](../docs/testing/SESSION_ROLLOVER.md).
+The registry `.codex/project-session.json` identifies the sole primary task;
+this routing does not reopen closed work or authorize implementation.
+The 2026-09-14 status below is historical; current consolidation is in the handoff.
+
 This directory contains only the documents that currently govern future work in
 the canonical ZANI repository.
+
+Status reconciliation: 2026-09-14, committed source `4ba3cbf`. Historical full
+gates do not certify the current uncommitted AI/channel package. See
+[backend audit](../docs/pilot/backend-development-audit.md) and
+[documentation inventory](../docs/operations/technical-documentation-audit.md).
 
 ## Current sources of authority
 
@@ -10,17 +23,16 @@ the canonical ZANI repository.
    synthesis, ordered security/fallback/UX/certification gates and release
    definition of done. It owns overall sequence but does not replace detailed
    task contracts.
-3. `CRM_WORKSPACE_UX_REFORM.md` — active UI/UX delivery plan. The next planned
-   phases are UX-3 (owner/administrator dashboard) and UX-4 (final browser
-   certification).
+3. `CRM_WORKSPACE_UX_REFORM.md` — active UI/UX delivery plan. UX-3
+   (owner/administrator dashboard) is done; UX-4 (final browser certification)
+   remains open. Do not reopen UX-3 from an older index snapshot.
 4. `DEFECT_KNOWLEDGE_BASE.md` — mandatory defect and regression-precedent
    register. Every confirmed defect must be recorded here and audited across
    every relevant shared surface.
-5. `APP_FUNCTIONAL_CERTIFICATION.md` — executed partial certification: FC-001,
-   FC-002, FC-005 and FC-007 pass; FC-003, FC-004 and FC-006 are partial. The
-   integrated committed-range full gate passed on `e65e0f4` with 954 Django
-   tests, frontend build/bundle, mobile smoke and dependency audits; FC-008
-   remains partial until the open FC rows and final report are reconciled.
+5. `APP_FUNCTIONAL_CERTIFICATION.md` — FC-001/002/004/005/006/007 pass at their
+   documented checkpoint; FC-003/008 remain partial. The latest recorded full
+   gate is `d4f7c8f` with 962 Django tests and frontend/mobile/dependency checks.
+   It does not cover subsequent uncommitted changes.
 6. `BACKEND_AUDIT_REMEDIATION_PLAN.md` — backend remediation evidence through
    BE-REM-006; BE-REM-007 is partial after the clean-range pass and remains
    open for final certification.
@@ -29,6 +41,10 @@ the canonical ZANI repository.
    certification. FB-001 through FB-007 and FB-010 are done in the committed
    candidate; FB-008 remains open for live-provider evidence and FB-009 for
    manual screen-reader evidence.
+8. `../docs/pilot/backend-open-logic-register.md` — canonical backend remaining
+   scope. BE-GAP-001 is closed; BE-GAP-003 remains partial; BE-GAP-004 requires
+   a policy decision; BE-GAP-006 has a connector-sync implementation gap as well
+   as environment prerequisites.
 
 ## Boundary
 

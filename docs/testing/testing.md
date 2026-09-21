@@ -72,6 +72,8 @@ It creates a unique temporary SQLite database for every invocation, allocates
 dedicated loopback ports for browser runs, refuses to reuse existing servers,
 and removes the database in a `finally`-equivalent context on pass or failure.
 It never writes ordinary `db.sqlite3`, even when `DATABASE_URL` is inherited.
+Public and private test uploads also stay under that invocation's temporary
+directory; neither local `media/` nor inherited media-root paths are used.
 
 The gate passes through only the minimum OS process environment. It explicitly
 selects the Python runtime and deterministic seed identities, uses

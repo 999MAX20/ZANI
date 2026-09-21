@@ -195,6 +195,8 @@ def safe_environment(
             "CORS_ALLOW_CREDENTIALS": "True",
             "CSRF_TRUSTED_ORIGINS": frontend_url,
             "DATABASE_URL": f"sqlite:///{database_path.resolve().as_posix()}",
+            "MEDIA_ROOT": str(database_path.resolve().parent / "media"),
+            "PRIVATE_MEDIA_ROOT": str(database_path.resolve().parent / "private"),
             "E2E_PYTHON": str(Path(python).resolve()),
             "E2E_DJANGO_PORT": str(django_port),
             "E2E_FRONTEND_PORT": str(frontend_port),

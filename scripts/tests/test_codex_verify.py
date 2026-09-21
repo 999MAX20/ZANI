@@ -25,6 +25,8 @@ class SafeEnvironmentTests(unittest.TestCase):
             frontend_port=15174,
             base={
                 "DATABASE_URL": "postgresql://production",
+                "MEDIA_ROOT": "C:/live/media",
+                "PRIVATE_MEDIA_ROOT": "C:/live/private",
                 "E2E_PYTHON": "C:/unsafe/python.exe",
                 "E2E_PASSWORD": "live-password",
                 "E2E_PLATFORM_EMAIL": "admin@production.example",
@@ -55,6 +57,8 @@ class SafeEnvironmentTests(unittest.TestCase):
             f"sqlite:///{database_path.resolve().as_posix()}",
         )
         self.assertEqual(environment["E2E_PYTHON"], str(Path(sys.executable).resolve()))
+        self.assertEqual(environment["MEDIA_ROOT"], str(database_path.resolve().parent / "media"))
+        self.assertEqual(environment["PRIVATE_MEDIA_ROOT"], str(database_path.resolve().parent / "private"))
         self.assertEqual(environment["E2E_PASSWORD"], "ZaniTest123!")
         self.assertEqual(environment["E2E_PLATFORM_EMAIL"], "platform_admin@example.com")
         self.assertEqual(environment["OPENAI_API_KEY"], "")
@@ -100,11 +104,17 @@ class SafeEnvironmentTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             developer_database = Path(directory) / "db.sqlite3"
             developer_database.write_bytes(b"developer-data-must-survive")
+            developer_media = Path(directory) / "developer-media"
+            developer_media.mkdir()
+            developer_file = developer_media / "existing.txt"
+            developer_file.write_bytes(b"developer-media-must-survive")
 
             with codex_verify.isolated_runtime(
                 python=sys.executable,
                 base={
                     "DATABASE_URL": f"sqlite:///{developer_database.as_posix()}",
+                    "MEDIA_ROOT": str(developer_media),
+                    "PRIVATE_MEDIA_ROOT": str(developer_media),
                     "E2E_BASE_URL": "http://127.0.0.1:5173",
                     "E2E_API_BASE_URL": "http://127.0.0.1:8000",
                 },
@@ -112,6 +122,12 @@ class SafeEnvironmentTests(unittest.TestCase):
                 runtime.database_path.write_bytes(b"gate-data")
                 gate_database = runtime.database_path
                 self.assertNotEqual(gate_database.resolve(), developer_database.resolve())
+                for key in ("MEDIA_ROOT", "PRIVATE_MEDIA_ROOT"):
+                    gate_media = Path(runtime.environment[key])
+                    self.assertEqual(gate_media.parent, gate_database.parent)
+                    self.assertNotEqual(gate_media, developer_media)
+                    gate_media.mkdir()
+                    (gate_media / "test-upload.txt").write_bytes(b"disposable-upload")
                 self.assertNotIn(runtime.django_port, {8000, 5173})
                 self.assertNotIn(runtime.frontend_port, {8000, 5173})
                 self.assertEqual(
@@ -128,6 +144,8 @@ class SafeEnvironmentTests(unittest.TestCase):
                 )
 
             self.assertFalse(gate_database.exists())
+            self.assertFalse(gate_media.exists())
+            self.assertEqual(developer_file.read_bytes(), b"developer-media-must-survive")
             self.assertEqual(
                 developer_database.read_bytes(),
                 b"developer-data-must-survive",

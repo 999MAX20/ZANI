@@ -72,6 +72,20 @@
   для ancestry, без подмены canonical tree; старый main должен стать предком,
   обе истории оставаться достижимыми. Full gate — на реальном remote base
   `73482a3bea7f168113c58d8cb928214c97f032d5` после reconciliation.
+- Выполнено: product `7fc450e`, toolkit `02fefc7`, docs `0d901be`; reconciliation
+  `1e5a85d` имеет обоих предков. Tree до/после merge одинаковый
+  `bd9aae25f0c6de216d1b7b63d649f7ea46258e54`; legacy code не перенесён.
+  До docs commit исправлена только лишняя пустая EOF-строка archived Telegram doc.
+- Preflight реального remote range выявил CRLF/trailing whitespace в четырёх
+  существующих migrations и archived PROJECT_EXECUTION_MASTER. Исправляется
+  только whitespace; Python AST и весь non-whitespace текст совпадают, schema
+  не меняется. Manifest `output/git-publication-20260921/whitespace-normalization.json`.
+- Найден проверяемый gap test isolation: runner не задавал MEDIA_ROOT/private,
+  Django использовал бы working media. Добавлен regression (2 KeyError до fix),
+  media paths помещены рядом с disposable DB. Runner unit suite 15/15 PASS,
+  включая сохранение чужого media sentinel и удаление test upload paths.
+  Это безопасный запуск обязательного gate, не изменение продуктового storage.
+- Next: commit узких gate-fixes и full integrated gate на актуальном HEAD/base.
 - Следующий продуктовый пакет утверждён, но здесь не реализуется: специалист
   бизнеса без CRM-account/login/access, с расписанием/занятостью; можно завести
   ещё неизвестного справочнику врача без автоматического пользователя/приглашения.

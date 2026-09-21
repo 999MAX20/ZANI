@@ -2,7 +2,39 @@
 
 Дата: 2026-09-21. Это карточка исполнения, не продуктовый backlog.
 
-## Активная реализация — V1-F06 / V1-W02, специалист и индивидуальное расписание
+## V1-F06 / V1-W02 — реализация проверена, публикация по квитанции
+
+Финальный local checkpoint 2026-09-21: полный gate PASS на code candidate
+`47c998b994e3c993fb4b9029d02309d1038b502f`, base
+`1d876d9216ced0c9815d4b0de62ef0a583cc1c85`. Canonical root/branch/owner ниже
+не изменились, candidate clean. Следующий commit содержит только документацию;
+application tree остаётся тем же проверенным кандидатом.
+
+- Команда: `.\.venv\Scripts\python.exe scripts/codex_verify.py --mode full --base-ref 1d876d9216ced0c9815d4b0de62ef0a583cc1c85`.
+- PASS: migration drift/system check, 1103 Django tests / 856.560s, npm ci,
+  i18n/type/build/widget/bundle, 2 mobile owner/manager smoke, hashed lock
+  installability, Python/npm audits и итоговый working/index/range diff hygiene.
+- До full: affected 142 PASS, final focused 86 scheduling + activities PASS;
+  14 specialist tests включают login/membership independence и foreign denial.
+  Desktop/mobile отсутствие: 10 записей/3 клиента → замена → 9 → отмена → 8,
+  pagination >50 часов; calendar create/reschedule и weekly/deep-link PASS.
+  Два прежних mobile duplicate tests skipped по их дизайну, новый absence mobile
+  и обязательные mobile owner/manager выполнены.
+- Первые failures сохранены ниже/в логах: fixtures без обязательного специалиста,
+  прежний auto-booking contract и сохранение прежнего inactive linked account.
+  Исправлены; текущих required-gate failures нет.
+- Среда: Windows, Python 3.12.14, disposable SQLite, locmem/eager,
+  providers disabled/mocked. Migration `scheduling.0008` только в test DB.
+  Рабочая БД, deploy, live channels, кресла и несколько смен в день не проверялись:
+  они вне текущего scope. Новая рассылка только задокументирована.
+- Publication boundary: normal push `origin/main`, exact remote readback и CI
+  ещё должны быть подтверждены. Операционная квитанция с конечным SHA/CI/result:
+  `output/v1-scheduling-20260921/result.json`; exact commands/logs/skips/review:
+  `output/v1-scheduling-20260921/report.md`. Не завершать задачу по одному local PASS.
+- После публикации остановиться в этой фазе. Следующие возможности (кресла,
+  клиентская рассылка) остаются отдельным scope; общий V1-W02 не объявлен закрытым.
+
+Ниже — исходный контракт и последовательные checkpoints этой же фазы.
 
 Актуальный checkpoint 2026-09-21 19:57 +05:00: candidate `b80d1ff` создан,
 но не опубликован. Full gate завершился: 1101 tests / 863.479s, один FAIL —

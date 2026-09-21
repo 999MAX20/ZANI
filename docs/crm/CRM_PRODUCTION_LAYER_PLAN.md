@@ -1,6 +1,6 @@
 # CRM Production Layer Plan
 
-Last updated: 2026-09-21 (bounded W05/W06 local evidence; historical closures preserved).
+Last updated: 2026-09-21 (specialist scheduling package locally verified; historical closures preserved).
 
 ## Локальная CRM и допуск клиники — 2026-09-21
 
@@ -9,7 +9,10 @@ Last updated: 2026-09-21 (bounded W05/W06 local evidence; historical closures pr
 отсутствии. Кресла и автоматическая рассылка не реализуются; для рассылки владелец
 попросил подробный желаемый сценарий. [Контракт](specialist-scheduling.md),
 [текущий checkpoint и gates](../testing/task-state/PRIMARY-SESSION.md).
-Реализация в работе; это не отметка завершения до всех обязательных проверок.
+Реализация локально проверена полным gate на `47c998b`: индивидуальное создание,
+availability, отсутствие, ручные действия и независимость от CRM-логина.
+Публикационный SHA/CI — в квитанции checkpoint; локальный PASS не означает deploy
+или приёмку реальной клиникой. Остальной V1-W02 не закрывается этим пакетом.
 
 [Конечный остаток до пилота](../pilot/local-crm-completion.md) связывает
 существующие V1/FC/BE-GAP ID с кодом, незавершённой работой и условиями двух

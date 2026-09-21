@@ -78,7 +78,7 @@ export function WorkingHoursPage() {
     () => (resources.data || []).filter((resource) => resource.is_active),
     [resources.data],
   );
-  const selectedResource = activeResources.find((resource) => resource.id === selectedResourceId) || null;
+  const selectedResource = (resources.data || []).find((resource) => resource.id === selectedResourceId) || null;
   const modalOpen = businessSelected || Boolean(selectedResource);
 
   const setView = useCallback((view: WorkingHoursView) => {

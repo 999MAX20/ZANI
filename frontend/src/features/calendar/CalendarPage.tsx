@@ -8,7 +8,7 @@ import {
   type AppointmentCreatePayload,
 } from "../../api/appointments";
 import { getApiErrorMessage } from "../../api/client";
-import { workingHoursApi } from "../../api/workingHours";
+import { scheduleExceptionsApi, workingHoursApi } from "../../api/workingHours";
 import { useActionFeedback } from "../../components/actions/useActionFeedback";
 import { AppointmentForm } from "../../components/forms/AppointmentForm";
 import { AppointmentRescheduleForm } from "../../components/forms/AppointmentRescheduleForm";
@@ -196,7 +196,12 @@ export function CalendarPage() {
         resource_id: resourceFilter ? Number(resourceFilter) : "",
         date,
       }),
-    enabled: Boolean(business?.id && serviceFilter && date),
+    enabled: Boolean(business?.id && serviceFilter && resourceFilter && date),
+  });
+  const dateExceptions = useQuery({
+    queryKey: ["schedule-exceptions", business?.id, resourceFilter, date],
+    queryFn: () => scheduleExceptionsApi.list({ business: business!.id, resource: resourceFilter, date }),
+    enabled: Boolean(business?.id && resourceFilter && date),
   });
 
   useEffect(() => {
@@ -518,7 +523,7 @@ export function CalendarPage() {
     ) || null;
   const hasWorkingHours = Boolean(workingHourItems.length);
   const selectedResourceId = resourceFilter ? Number(resourceFilter) : null;
-  const selectedDayHours = getWorkingHoursFor(
+  const selectedDayHours = dateExceptions.data?.[0] ? { ...dateExceptions.data[0], weekday: getWeekday(date) } : getWorkingHoursFor(
     workingHourItems,
     getWeekday(date),
     selectedResourceId,
@@ -531,10 +536,10 @@ export function CalendarPage() {
     timelineHours.length - dayAppointments.length,
   );
   const openSlotsCount =
-    serviceFilter && dayAvailableSlots.data
+    serviceFilter && resourceFilter && dayAvailableSlots.data
       ? dayAvailableSlots.data.length
       : openSlotsFallback;
-  const openSlotsLabel = serviceFilter
+  const openSlotsLabel = serviceFilter && resourceFilter
     ? t("calendar.openSlots")
     : t("calendar.openSlotsEstimate");
   const timeZoneLabel = formatTimeZoneLabel(businessTimeZone);

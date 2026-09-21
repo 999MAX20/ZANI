@@ -1,6 +1,16 @@
 import { ru } from "./ru";
 
 export const en: Record<string, string> = {
+  "workingHours.reviewAppointments": "Review appointments",
+  "workingHours.reassignOrReschedule": "Replace specialist / reschedule",
+  "workingHours.absenceCounts": "Appointments remaining: {count}. Clients: {clients}.",
+  "workingHours.noAppointmentsOnDate": "No appointments need rescheduling or cancellation.",
+  "workingHours.appointmentsToReview": "Appointments on the selected date",
+  "workingHours.restoreWeek": "Restore weekly schedule",
+  "workingHours.saveDate": "Save date",
+  "workingHours.dateExceptions": "Date-specific schedule changes",
+  "resources.setupSchedule": "Next: individual schedule",
+  "appointment.selectSpecialist": "Select an active specialist",
   "payments.refundDateInvalid": "A refund cannot precede its receipt.",
   "permissions.resource.payments": "Payments",
   "payments.title": "Payments",
@@ -1499,15 +1509,14 @@ export const en: Record<string, string> = {
     "Slots are calculated from service duration. Add at least one active service.",
   "appointment.goServices": "Set up services",
   "appointment.resourceHintTitle": "Add a specialist for precise scheduling",
-  "appointment.resourceHintText":
-    "A resource can be a specialist, room, workplace or equipment item with its own schedule.",
+  "appointment.resourceHintText": "Add an active specialist and set their individual schedule before booking.",
   "appointment.goResources": "Go to resources",
   "appointment.resourceOptionalTitle": "A specialist or resource can be selected manually",
   "appointment.resourceSelectedText":
     "Leave this field empty to create the booking against the business-wide schedule. Select a specific specialist, room or workplace only when needed.",
   "appointment.client": "Client",
   "appointment.service": "Service",
-  "appointment.resource": "Specialist / resource",
+  "appointment.resource": "Specialist",
   "appointment.lead": "Lead",
   "appointment.date": "Date",
   "appointment.time": "Time",
@@ -1801,7 +1810,7 @@ export const en: Record<string, string> = {
   "resources.typeEquipment": "Equipment",
   "resources.typeOther": "Other",
   "resources.linkedUser": "Responsible team member",
-  "resources.noLinkedUser": "Not assigned",
+  "resources.noLinkedUser": "No CRM access",
   "resources.available": "Available for bookings",
   "resources.save": "Save",
   "resources.searchPlaceholder": "Search team and resources...",

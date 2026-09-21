@@ -950,6 +950,7 @@ export type Resource = {
   is_active: boolean;
   appointment_count?: number;
   has_individual_schedule?: boolean;
+  weekly_schedule?: Array<Pick<WorkingHours, "weekday" | "start_time" | "end_time" | "is_day_off">>;
   created_at: string;
   updated_at: string;
 };
@@ -962,6 +963,11 @@ export type WorkingHours = {
   start_time: string;
   end_time: string;
   is_day_off: boolean;
+};
+
+export type ScheduleException = Omit<WorkingHours, "weekday" | "resource"> & {
+  resource: Id;
+  date: string;
 };
 
 export type Appointment = {

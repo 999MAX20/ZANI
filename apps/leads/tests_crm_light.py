@@ -12,7 +12,7 @@ from apps.businesses.models import Business, BusinessMember, BusinessRole
 from apps.clients.models import Client
 from apps.core.models import AuditLog
 from apps.leads.models import Lead
-from apps.scheduling.models import Appointment, WorkingHours
+from apps.scheduling.models import Appointment, Resource, WorkingHours
 from apps.services.models import Service
 from apps.tasks.models import Task
 
@@ -448,6 +448,7 @@ class LeadFlowQuickActionTests(TestCase):
         )
 
     def test_create_appointment_from_lead_uses_contract_and_writes_activity_audit(self):
+        booking_resource = Resource.objects.create(business=self.business, name="Booking specialist")
         service = Service.objects.create(business=self.business, name="Consultation", duration_minutes=60)
         WorkingHours.objects.create(
             business=self.business,
@@ -458,7 +459,7 @@ class LeadFlowQuickActionTests(TestCase):
 
         response = self.api.post(
             f"/api/leads/{self.lead.id}/create-appointment/",
-            {"service": service.id, "start_at": "2026-05-11T10:00:00+05:00"},
+            {"resource": booking_resource.id, "service": service.id, "start_at": "2026-05-11T10:00:00+05:00"},
             format="json",
         )
 
@@ -493,6 +494,7 @@ class LeadFlowQuickActionTests(TestCase):
         )
 
     def test_create_appointment_from_lead_replays_idempotency_key_without_side_effects(self):
+        booking_resource = Resource.objects.create(business=self.business, name="Booking specialist")
         service = Service.objects.create(business=self.business, name="Idempotent consultation", duration_minutes=60)
         WorkingHours.objects.create(
             business=self.business,
@@ -500,7 +502,7 @@ class LeadFlowQuickActionTests(TestCase):
             start_time=time(9, 0),
             end_time=time(18, 0),
         )
-        payload = {"service": service.id, "start_at": "2026-05-11T10:00:00+05:00"}
+        payload = {"resource": booking_resource.id, "service": service.id, "start_at": "2026-05-11T10:00:00+05:00"}
         headers = {"HTTP_IDEMPOTENCY_KEY": "lead-appointment-once"}
 
         first = self.api.post(
@@ -536,6 +538,7 @@ class LeadFlowQuickActionTests(TestCase):
         )
 
     def test_create_appointment_rejects_idempotency_key_payload_mismatch(self):
+        booking_resource = Resource.objects.create(business=self.business, name="Booking specialist")
         service = Service.objects.create(business=self.business, name="Mismatch consultation", duration_minutes=60)
         WorkingHours.objects.create(
             business=self.business,
@@ -547,13 +550,13 @@ class LeadFlowQuickActionTests(TestCase):
 
         first = self.api.post(
             f"/api/leads/{self.lead.id}/create-appointment/",
-            {"service": service.id, "start_at": "2026-05-11T10:00:00+05:00"},
+            {"resource": booking_resource.id, "service": service.id, "start_at": "2026-05-11T10:00:00+05:00"},
             format="json",
             **headers,
         )
         mismatch = self.api.post(
             f"/api/leads/{self.lead.id}/create-appointment/",
-            {"service": service.id, "start_at": "2026-05-11T12:00:00+05:00"},
+            {"resource": booking_resource.id, "service": service.id, "start_at": "2026-05-11T12:00:00+05:00"},
             format="json",
             **headers,
         )

@@ -1,12 +1,16 @@
 import { createCrudApi } from "./crud";
-import type { WorkingHours } from "../types";
+import type { WorkingHours, ScheduleException } from "../types";
 import { apiClient } from "./client";
 import type { Id } from "../types";
 
 export type WorkingHoursPreset = "weekdays_9_18" | "daily_9_20" | "mon_sat_9_18";
+const exceptionCrudApi = createCrudApi<ScheduleException>("/api/schedule-exceptions/");
+export const scheduleExceptionsApi = { ...exceptionCrudApi, list: exceptionCrudApi.listAll };
+const hoursCrudApi = createCrudApi<WorkingHours>("/api/working-hours/");
 
 export const workingHoursApi = {
-  ...createCrudApi<WorkingHours>("/api/working-hours/"),
+  ...hoursCrudApi,
+  list: hoursCrudApi.listAll,
   bulkUpsertWeek: async (payload: {
     business: Id;
     resource?: Id | null;

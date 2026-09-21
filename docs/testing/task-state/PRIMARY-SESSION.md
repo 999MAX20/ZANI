@@ -2,7 +2,88 @@
 
 Дата: 2026-09-21. Это карточка исполнения, не продуктовый backlog.
 
-## Активный bounded governance change — продолжение после compact
+## Активная реализация — V1-F06 / V1-W02, специалист и индивидуальное расписание
+
+- Owner authorization 2026-09-21: «согласен, приступай к реализации», включая
+  собственный график специалиста; вопрос о креслах рассматривается отдельно.
+- Mode: implementation; gaps: code + UI/API evidence. Источник:
+  `docs/pilot/local-crm-completion.md`, `docs/product/V1_PRODUCT_RULES.md`.
+- Единственный writer: primary `01a0c36e-33aa-7c72-be9b-72624dd2c739`.
+  Canonical root `C:\Users\user\Desktop\Zani`, branch `codex/ui-testing-toolkit`,
+  clean starting HEAD/base `1d876d9216ced0c9815d4b0de62ef0a583cc1c85`.
+  Snapshot всех tracked paths: `output/v1-scheduling-20260921/starting-snapshot.json`.
+- Observable outcome: администратор добавляет специалиста без CRM-аккаунта,
+  задаёт индивидуальную неделю и исключения по датам, создаёт/переносит запись
+  на свободное время выбранного специалиста и видит её в его календаре.
+- Reuse: Resource + optional linked_user, WorkingHours, availability/services,
+  существующие calendar/Resource/WorkingHours forms, lifecycle/audit/notifications.
+  Не создавать дублирующую Employee-модель или новый календарь.
+- Scope: scheduling services/models/API, связанные lead/inbox booking entrances,
+  frontend API/types/forms/resource/schedule views, i18n, соответствующие тесты
+  и текущие документы. Разовые изменения смены — отдельные date exceptions.
+- Owner confirmed: кресла позже; legacy история сохраняется без автозаполнения;
+  новые записи/переносы требуют активного специалиста; CRM login и scheduling
+  active независимы. Форс-мажор не отменяет записи: администратор вручную
+  переназначает на свободного специалиста или другую дату. Уведомления клиентам
+  о таком изменении — желаемая реализация, сейчас только документирование.
+- Permissions/tenant: settings:update для специалиста/графика; appointment actions
+  сохраняют текущие права и OWN scope. Все связи внутри Business. linked_user
+  только активный same-business account при назначении, не обязательный логин.
+- Notification/activity/audit: сохранить существующие lifecycle routes/recipients,
+  не отправлять приглашение при создании специалиста; новые schedule mutations
+  audit через существующий слой. BusinessEvent/integrations: новых событий нет.
+  AI: не расширять booking write policy, не обходить staff/availability validation.
+- Schema/env: только намеренная migration для exceptions (и кресел, если утверждены);
+  generation и test migration в isolated DB; рабочие БД/seed/deploy не разрешены.
+  Billing/seat counting, медицинские карты, Market и прочие фазы вне scope.
+- Acceptance: atomic creation with editable individual schedule and no login;
+  availability/date exceptions/overlap; mandatory selected specialist across
+  authorized booking entrypoints after policy resolution; lifecycle and history;
+  permission denial, cross-tenant rejection, linked-account independence;
+  reachable UI including specialist calendar and errors/loading/empty states.
+- Gates: focused isolated scheduling + affected lead/inbox/access regressions;
+  migration/check; i18n/type/build; browser create specialist/schedule/book/reschedule
+  flow; full candidate integration gate against captured base; reviewed explicit
+  commit paths, normal push origin/main, remote readback and actual CI.
+- Owner steering: после сохранения отсутствия — окно всех доступных активных
+  записей выбранного дня, counts записей/клиентов, ручная замена/перенос/отмена,
+  обновляемый остаток. Рассылка/подтверждение клиента документируются отдельно,
+  ни интеграций, ни отправки в текущем scope.
+- Реализовано локально: atomic Resource + week, ScheduleException/migration/API,
+  обязательный active staff в общей availability, legacy note compatibility,
+  создание специалиста через два шага, исключения/окно разбора/ручные действия.
+  Старый auto-booking по ответу клиента закрыт в пользу staff action по уже
+  утверждённой V1 policy; runtime smoke сохраняет реальные проверки после staff
+  booking. Контракт: `docs/crm/specialist-scheduling.md`.
+- Проверено: первый isolated check + migration drift + 9 новых backend tests PASS;
+  dictionary parity PASS после исправления размещения keys, TypeScript PASS до
+  последнего test/UI delta. 196 affected tests: 21 несовпадение старых fixtures/
+  auto-booking expectations с утверждённым контрактом; assertions overlap/history/
+  idempotency сохраняются, fixtures теперь выбирают специалиста, AI tests требуют
+  staff booking. Повтор изменённых целей и новый browser flow выполняются.
+- Evidence: `output/v1-scheduling-20260921/`; starting-snapshot.json,
+  focused-initial.log, affected-initial.log, affected-contract.log, browser-initial.log.
+  Delivery: dirty/local only, commit/push/full gate/CI ещё не выполнялись.
+  Next: candidate commit и полный integration gate против starting base.
+  Не повторять завершённые W05/W06, Git consolidation или governance checks.
+
+Checkpoint 2026-09-21 19:40 +05:00: affected contract rerun 142 tests PASS;
+последний focused 82 tests PASS, включая 12 новых specialist tests. Browser:
+создание специалиста/недели → 10 записей → отсутствие → замена → отмена PASS на
+desktop + mobile; последняя версия дополнительно проверяет неделю при >50 rows
+(pagination). Отдельно calendar create/reschedule 2 PASS; deep-link lifecycle
+и weekly editor 2 PASS desktop, их прежние mobile duplicates skipped; новый
+absence workflow на mobile выполнен. i18n 4939 keys и TypeScript PASS; новые
+7 docs links, Python parse и diff hygiene PASS. Screenshots визуально проверены.
+Full local integration и actual push CI пока НЕ запускались; локальный PASS
+не означает доставку. Рабочая БД/реальные провайдеры не затрагивались.
+
+Профильные exact labels/grep сохранены в логах и итоговом
+`output/v1-scheduling-20260921/report.md`; финальная операционная квитанция будет
+`output/v1-scheduling-20260921/result.json`. Для range gate нужен task candidate
+commit (testing.md); push только после успешного полного gate и review.
+
+## Завершённый bounded governance change — продолжение после compact
 
 Owner decision 2026-09-21 через Оркестратор; единственный writer остаётся
 `01a0c36e-33aa-7c72-be9b-72624dd2c739`. Root `C:\Users\user\Desktop\Zani`,

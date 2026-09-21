@@ -567,7 +567,7 @@ class BotsFoundationTests(TestCase):
         self.assertTrue(scheduling["next_available_slots"])
 
     @override_settings(AI_PROVIDER="mock", OPENAI_API_KEY="", OPENROUTER_API_KEY="")
-    def test_auto_pipeline_books_appointment_when_client_selects_offered_slot(self):
+    def test_client_selected_slot_requires_staff_booking(self):
         service = Service.objects.create(
             business=self.business,
             name="Консультация стоматолога",
@@ -615,7 +615,7 @@ class BotsFoundationTests(TestCase):
         auto_meta = conversation.metadata_json["auto_crm_pipeline"]
         self.assertEqual(auto_meta["confirmation_policy"]["mode"], "appointment_explicit")
         self.assertEqual(auto_meta["confirmation_policy"]["requires_explicit_confirmation"], ["create_appointment"])
-        self.assertEqual(auto_meta["confirmation_policy"]["appointment_confirmation_mode"], "client_selected_offered_slot")
+        self.assertEqual(auto_meta["confirmation_policy"]["appointment_confirmation_mode"], "staff_booking_required")
         self.assertFalse(Appointment.objects.filter(business=self.business, client=conversation.client).exists())
 
         second_response = self.api.post(
@@ -626,12 +626,20 @@ class BotsFoundationTests(TestCase):
 
         self.assertEqual(second_response.status_code, 201)
         conversation.refresh_from_db()
+        self.assertFalse(Appointment.objects.filter(business=self.business, client=conversation.client).exists())
+        self.assertEqual(conversation.metadata_json["auto_booking"]["status"], "requires_staff")
+        selected_slot = conversation.metadata_json["auto_booking"]["offered_slots"][0]
+        self.api.force_authenticate(self.owner)
+        booking_response = self.api.post(
+            f"/api/inbox/conversations/{conversation.id}/create-appointment/",
+            {"service_id": service.id, "resource_id": resource.id, "start_at": selected_slot["start_at"]},
+            format="json",
+        )
+        self.assertEqual(booking_response.status_code, 201, booking_response.data)
         appointment = Appointment.objects.get(business=self.business, client=conversation.client, lead=conversation.lead)
         self.assertEqual(appointment.service, service)
         self.assertEqual(appointment.resource, resource)
         self.assertEqual(appointment.source, Appointment.Sources.WEBSITE)
-        self.assertEqual(conversation.metadata_json["auto_booking"]["status"], "booked")
-        self.assertEqual(conversation.metadata_json["auto_booking"]["appointment_id"], appointment.id)
         self.assertTrue(
             ActivityEvent.objects.filter(
                 business=self.business,
@@ -644,7 +652,7 @@ class BotsFoundationTests(TestCase):
             ).exists()
         )
         self.assertTrue(Notification.objects.filter(business=self.business, appointment=appointment, action_label="Подтвердить запись").exists())
-        self.assertTrue(
+        self.assertFalse(
             BotMessage.objects.filter(
                 conversation=conversation,
                 direction=BotMessage.Directions.OUTBOUND,
@@ -654,7 +662,7 @@ class BotsFoundationTests(TestCase):
         )
 
     @override_settings(AI_PROVIDER="mock", OPENAI_API_KEY="", OPENROUTER_API_KEY="")
-    def test_auto_booking_runs_appointment_message_delivery_and_confirmation_reply(self):
+    def test_staff_booking_runs_appointment_message_delivery_and_confirmation_reply(self):
         service = Service.objects.create(
             business=self.business,
             name="Консультация",
@@ -728,6 +736,16 @@ class BotsFoundationTests(TestCase):
         self.assertEqual(second_response.status_code, 201)
 
         conversation.refresh_from_db()
+        self.assertFalse(Appointment.objects.filter(business=self.business, client=conversation.client).exists())
+        self.assertEqual(conversation.metadata_json["auto_booking"]["status"], "requires_staff")
+        selected_slot = conversation.metadata_json["auto_booking"]["offered_slots"][0]
+        self.api.force_authenticate(self.owner)
+        booking_response = self.api.post(
+            f"/api/inbox/conversations/{conversation.id}/create-appointment/",
+            {"service_id": service.id, "resource_id": resource.id, "start_at": selected_slot["start_at"]},
+            format="json",
+        )
+        self.assertEqual(booking_response.status_code, 201, booking_response.data)
         appointment = Appointment.objects.get(business=self.business, client=conversation.client, lead=conversation.lead)
         confirmation = Notification.objects.get(appointment=appointment, action_label="Подтвердить запись")
         reminder = Notification.objects.get(appointment=appointment, action_label="Напомнить о записи")
@@ -1686,6 +1704,7 @@ class InboxBackendTests(TestCase):
         )
 
     def test_inbox_can_create_appointment_from_conversation_when_data_is_complete(self):
+        booking_resource = Resource.objects.create(business=self.business, name="Booking specialist")
         lead = Lead.objects.create(business=self.business, client=self.client, source=Lead.Sources.WEBSITE, responsible_user=self.manager)
         self.conversation.lead = lead
         self.conversation.assigned_to = self.manager
@@ -1703,7 +1722,7 @@ class InboxBackendTests(TestCase):
 
         response = self.api.post(
             f"/api/inbox/conversations/{self.conversation.id}/create-appointment/",
-            {"service_id": service.id, "start_at": start_at.isoformat(), "notes": "Booked from inbox"},
+            {"resource_id": booking_resource.id, "service_id": service.id, "start_at": start_at.isoformat(), "notes": "Booked from inbox"},
             format="json",
         )
 
@@ -1758,7 +1777,7 @@ class InboxBackendTests(TestCase):
         )
         missing_client_response = self.api.post(
             f"/api/inbox/conversations/{empty_conversation.id}/create-appointment/",
-            {"service_id": service.id, "start_at": start_at.isoformat()},
+            {"resource_id": booking_resource.id, "service_id": service.id, "start_at": start_at.isoformat()},
             format="json",
         )
         self.assertEqual(missing_client_response.status_code, 400)
@@ -1768,6 +1787,7 @@ class InboxBackendTests(TestCase):
         self.assertNotIn("Conversation must be linked", str(missing_client_response.data))
 
     def test_inbox_rejects_appointment_when_linked_lead_transition_is_invalid(self):
+        booking_resource = Resource.objects.create(business=self.business, name="Booking specialist")
         lead = Lead.objects.create(
             business=self.business,
             client=self.client,
@@ -1791,7 +1811,7 @@ class InboxBackendTests(TestCase):
 
         response = self.api.post(
             f"/api/inbox/conversations/{self.conversation.id}/create-appointment/",
-            {"service_id": service.id, "start_at": start_at.isoformat(), "notes": "Booked from inbox"},
+            {"resource_id": booking_resource.id, "service_id": service.id, "start_at": start_at.isoformat(), "notes": "Booked from inbox"},
             format="json",
         )
 
@@ -1837,6 +1857,7 @@ class InboxBackendTests(TestCase):
         )
 
     def test_inbox_create_appointment_replays_idempotency_key(self):
+        booking_resource = Resource.objects.create(business=self.business, name="Booking specialist")
         lead = Lead.objects.create(
             business=self.business,
             client=self.client,
@@ -1865,7 +1886,7 @@ class InboxBackendTests(TestCase):
             is_day_off=False,
         )
         self.api.force_authenticate(self.owner)
-        payload = {
+        payload = {"resource_id": booking_resource.id,
             "service_id": service.id,
             "start_at": start_at.isoformat(),
             "notes": "Book once",

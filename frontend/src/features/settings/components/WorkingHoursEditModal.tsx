@@ -8,6 +8,7 @@ import { ErrorState } from "../../../components/ui/StateViews";
 import { StatusNotice } from "../../../components/ui/StatusNotice";
 import { useI18n } from "../../../lib/i18n";
 import type { Business, Resource, WorkingHours } from "../../../types";
+import { ScheduleExceptionsPanel } from "./ScheduleExceptionsPanel";
 
 const FORM_ID = "working-hours-edit-form";
 
@@ -96,6 +97,7 @@ export function WorkingHoursEditModal({
           onDirtyChange={handleDirtyChange}
           onSubmit={onSubmit}
         />
+        {resource ? <ScheduleExceptionsPanel key={resource.id} resource={resource} timeZone={business.timezone} canManage={canManage} /> : null}
       </div>
 
       <div className="sticky bottom-0 flex items-center justify-end gap-2 border-t border-zani-border bg-surface-card px-4 py-3 sm:px-5">

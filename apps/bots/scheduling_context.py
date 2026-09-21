@@ -11,7 +11,7 @@ def build_bot_scheduling_context(conversation, *, qualification=None, days=5, sl
     business = conversation.business
     message_text = " ".join(conversation.messages.order_by("-created_at").values_list("text", flat=True)[:8]).lower()
     services = list(Service.objects.filter(business=business, is_active=True).order_by("name")[:20])
-    resources = list(Resource.objects.filter(business=business, is_active=True).order_by("name")[:20])
+    resources = list(Resource.objects.filter(business=business, is_active=True, resource_type=Resource.ResourceTypes.STAFF).order_by("name")[:20])
 
     matched_service = _match_service(services, message_text, qualification=qualification)
     matched_resource = _match_resource(resources, message_text)

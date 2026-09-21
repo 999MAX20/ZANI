@@ -1,6 +1,16 @@
 import { ru } from "./ru";
 
 export const kk: Record<string, string> = {
+  "workingHours.reviewAppointments": "Жазбаларды қарау",
+  "workingHours.reassignOrReschedule": "Маманды ауыстыру / уақытын өзгерту",
+  "workingHours.absenceCounts": "Қалған жазбалар: {count}. Клиенттер: {clients}.",
+  "workingHours.noAppointmentsOnDate": "Ауыстыруды немесе бас тартуды қажет ететін жазбалар жоқ.",
+  "workingHours.appointmentsToReview": "Таңдалған күндегі жазбалар",
+  "workingHours.restoreWeek": "Апталық кестені қалпына келтіру",
+  "workingHours.saveDate": "Күнді сақтау",
+  "workingHours.dateExceptions": "Жеке күндердегі кесте өзгерістері",
+  "resources.setupSchedule": "Келесі: жеке жұмыс кестесі",
+  "appointment.selectSpecialist": "Белсенді маманды таңдаңыз",
   "payments.refundDateInvalid": "Қайтарым төлемнен бұрын болуы мүмкін емес.",
   "permissions.resource.payments": "Төлемдер",
   "payments.title": "Төлемдер",
@@ -1507,8 +1517,7 @@ export const kk: Record<string, string> = {
     "Бос уақыттар қызмет ұзақтығы бойынша есептеледі. Кемінде бір белсенді қызмет қосыңыз.",
   "appointment.goServices": "Қызметтерді баптау",
   "appointment.resourceHintTitle": "Дәл кесте үшін маман қосыңыз",
-  "appointment.resourceHintText":
-    "Ресурс жеке кестесі бар маман, кабинет, жұмыс орны немесе жабдық болуы мүмкін.",
+  "appointment.resourceHintText": "Жазба жасау үшін белсенді маманды қосып, оның жеке жұмыс кестесін орнатыңыз.",
   "appointment.goResources": "Ресурстарға өту",
   "appointment.resourceOptionalTitle":
     "Маман немесе кабинетті қолмен таңдауға болады",
@@ -1516,7 +1525,7 @@ export const kk: Record<string, string> = {
     "Өрісті бос қалдырсаңыз, жазба бизнестің жалпы кестесі бойынша жасалады. Нақты маман, кабинет немесе жұмыс орны керек болса, төменде таңдаңыз.",
   "appointment.client": "Клиент",
   "appointment.service": "Қызмет",
-  "appointment.resource": "Маман / ресурс",
+  "appointment.resource": "Маман",
   "appointment.lead": "Өтінім",
   "appointment.date": "Күні",
   "appointment.time": "Уақыты",
@@ -1811,7 +1820,7 @@ export const kk: Record<string, string> = {
   "resources.typeEquipment": "Жабдық",
   "resources.typeOther": "Басқа",
   "resources.linkedUser": "Жауапты қызметкер",
-  "resources.noLinkedUser": "Тағайындалмаған",
+  "resources.noLinkedUser": "CRM-ге қолжетімділіксіз",
   "resources.available": "Жазбаға қолжетімді",
   "resources.save": "Сақтау",
   "resources.searchPlaceholder": "Қызметкерлер мен ресурстарды іздеу...",

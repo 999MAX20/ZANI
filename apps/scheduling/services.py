@@ -9,6 +9,7 @@ from apps.activities.taxonomy import ActivityEvents
 from apps.automations.engine import run_automations_for_event
 from apps.automations.models import AutomationRule
 from apps.businesses.models import Business
+from apps.businesses.access import Actions, Resources, assert_can
 from apps.core.audit import (
     infer_audit_category,
     infer_audit_risk,
@@ -81,6 +82,7 @@ def create_appointment_from_lead(
     source=Appointment.Sources.MANUAL,
     lead_activity_source="scheduling",
 ):
+    Business.objects.select_for_update().get(pk=lead.business_id)
     if service.business_id != lead.business_id:
         raise ValueError("Service must belong to lead business.")
     if resource and resource.business_id != lead.business_id:
@@ -272,6 +274,9 @@ def add_appointment_note(*, appointment, actor, text, request=None):
 @transaction.atomic
 def reschedule_appointment(*, appointment, actor, start_at, resource=None, reason="", request=None):
     Business.objects.select_for_update().get(pk=appointment.business_id)
+    appointment = Appointment.objects.select_related("business", "client", "lead", "service", "resource").get(pk=appointment.pk)
+    if actor is not None:
+        assert_can(actor, appointment.business, Resources.APPOINTMENTS, Actions.UPDATE, obj=appointment)
     if appointment.is_archived:
         raise InvalidTransition(
             "Archived appointments cannot be rescheduled.",

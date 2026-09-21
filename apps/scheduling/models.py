@@ -57,6 +57,22 @@ class WorkingHours(models.Model):
         return f"{target}: {self.weekday} {self.start_time}-{self.end_time}"
 
 
+class ScheduleException(TimeStampedModel):
+    business = models.ForeignKey(Business, on_delete=models.CASCADE, related_name="schedule_exceptions")
+    resource = models.ForeignKey(Resource, on_delete=models.CASCADE, related_name="schedule_exceptions")
+    date = models.DateField()
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    is_day_off = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ["date", "id"]
+        constraints = [
+            models.UniqueConstraint(fields=["resource", "date"], name="unique_resource_schedule_date"),
+            models.CheckConstraint(condition=models.Q(start_time__lt=models.F("end_time")), name="schedule_exception_time_order"),
+        ]
+
+
 class Appointment(TimeStampedModel):
     class Statuses(models.TextChoices):
         CREATED = "created", "Created"

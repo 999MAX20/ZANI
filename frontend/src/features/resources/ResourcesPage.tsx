@@ -9,7 +9,7 @@ import { teamApi } from "../../api/team";
 import { workingHoursApi } from "../../api/workingHours";
 import { useActionConfirm } from "../../components/actions/ActionConfirmProvider";
 import { CrmWorkspacePage } from "../../components/crm";
-import { ResourceForm } from "../../components/forms/ResourceForm";
+import { ResourceCreateForm } from "./components/ResourceCreateForm";
 import { usePageHeader } from "../../components/layout/PageHeaderContext";
 import { useNotification } from "../../components/notifications/NotificationProvider";
 import { DataTable } from "../../components/tables/DataTable";
@@ -121,6 +121,11 @@ export function ResourcesPage() {
     queryKey: ["working-hours", "resource-modal", business?.id, selectedResourceId],
     queryFn: () => workingHoursApi.list({ business: business!.id, resource: selectedResourceId! }),
     enabled: Boolean(business?.id && selectedResourceId),
+  });
+  const businessHoursQuery = useQuery({
+    queryKey: ["working-hours", "resource-create", business?.id],
+    queryFn: () => workingHoursApi.list({ business: business!.id }),
+    enabled: Boolean(business?.id && createOpen),
   });
 
   const mutation = useMutation({
@@ -385,6 +390,7 @@ export function ResourcesPage() {
 
       <Modal
         title={t("resources.add")}
+        testId="resource-create-modal"
         open={createOpen}
         onClose={() => {
           if (mutation.isPending) return;
@@ -392,11 +398,13 @@ export function ResourcesPage() {
           setCreateDraft(undefined);
         }}
       >
-        <ResourceForm
+        {businessHoursQuery.error ? <ErrorState message={getApiErrorMessage(businessHoursQuery.error)} /> : null}
+        <ResourceCreateForm
           businessId={business.id}
           initial={createDraft}
+          businessHours={businessHoursQuery.data || []}
           teamMembers={activeTeamMembers}
-          disabled={!canManage}
+          disabled={!canManage || businessHoursQuery.isLoading || Boolean(businessHoursQuery.error)}
           onSubmit={(payload) => mutation.mutateAsync({ payload })}
         />
       </Modal>

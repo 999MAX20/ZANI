@@ -100,6 +100,7 @@ class CorePlatformTests(TestCase):
         self.assertEqual(appointment.status, Appointment.Statuses.CREATED)
 
     def test_get_available_slots(self):
+        booking_resource = Resource.objects.create(business=self.business, name="Booking specialist")
         service = Service.objects.create(business=self.business, name="Consultation", duration_minutes=60)
         WorkingHours.objects.create(
             business=self.business,
@@ -107,12 +108,13 @@ class CorePlatformTests(TestCase):
             start_time=time(9, 0),
             end_time=time(12, 0),
         )
-        slots = get_available_slots(self.business, service, date(2026, 5, 11))
+        slots = get_available_slots(self.business, service, date(2026, 5, 11), resource=booking_resource)
         self.assertEqual(len(slots), 5)
         self.assertEqual(slots[0].time(), time(9, 0))
         self.assertEqual(slots[-1].time(), time(11, 0))
 
     def test_busy_slots_are_not_returned(self):
+        booking_resource = Resource.objects.create(business=self.business, name="Booking specialist")
         client = Client.objects.create(business=self.business, full_name="Client")
         service = Service.objects.create(business=self.business, name="Consultation", duration_minutes=60)
         WorkingHours.objects.create(
@@ -128,9 +130,10 @@ class CorePlatformTests(TestCase):
             service=service,
             start_at=start_at,
             end_at=start_at + timedelta(minutes=60),
+            resource=booking_resource,
         )
 
-        slots = get_available_slots(self.business, service, date(2026, 5, 11))
+        slots = get_available_slots(self.business, service, date(2026, 5, 11), resource=booking_resource)
         slot_times = [slot.time() for slot in slots]
 
         self.assertNotIn(time(9, 30), slot_times)
@@ -140,6 +143,7 @@ class CorePlatformTests(TestCase):
         self.assertIn(time(11, 0), slot_times)
 
     def test_create_appointment_from_lead_updates_lead(self):
+        booking_resource = Resource.objects.create(business=self.business, name="Booking specialist")
         client = Client.objects.create(business=self.business, full_name="Client")
         service = Service.objects.create(business=self.business, name="Consultation", duration_minutes=60)
         lead = Lead.objects.create(business=self.business, client=client, message="Please book me")
@@ -151,7 +155,7 @@ class CorePlatformTests(TestCase):
         )
 
         start_at = datetime(2026, 5, 11, 9, 0, tzinfo=ZoneInfo("Asia/Almaty"))
-        appointment = create_appointment_from_lead(lead, service, start_at)
+        appointment = create_appointment_from_lead(lead, service, start_at, resource=booking_resource)
         lead.refresh_from_db()
 
         self.assertEqual(appointment.lead, lead)
@@ -177,6 +181,7 @@ class CorePlatformTests(TestCase):
         self.assertEqual(Notification.objects.filter(appointment=appointment, status=Notification.Statuses.PENDING).count(), 2)
 
     def test_create_appointment_from_closed_lead_is_rejected_without_side_effects(self):
+        booking_resource = Resource.objects.create(business=self.business, name="Booking specialist")
         client = Client.objects.create(business=self.business, full_name="Client")
         service = Service.objects.create(business=self.business, name="Consultation", duration_minutes=60)
         lead = Lead.objects.create(
@@ -194,7 +199,7 @@ class CorePlatformTests(TestCase):
         start_at = datetime(2026, 5, 11, 9, 0, tzinfo=ZoneInfo("Asia/Almaty"))
 
         with self.assertRaisesMessage(Exception, "Cannot move lead"):
-            create_appointment_from_lead(lead, service, start_at)
+            create_appointment_from_lead(lead, service, start_at, resource=booking_resource)
 
         self.assertFalse(Appointment.objects.filter(business=self.business, lead=lead).exists())
         lead.refresh_from_db()
@@ -681,6 +686,7 @@ class CorePlatformTests(TestCase):
         )
 
     def test_appointment_api_cancels_pending_followups_when_cancelled(self):
+        booking_resource = Resource.objects.create(business=self.business, name="Booking specialist")
         api = APIClient()
         api.force_authenticate(self.owner)
         client = Client.objects.create(business=self.business, full_name="Client", phone="+77015550123")
@@ -694,7 +700,7 @@ class CorePlatformTests(TestCase):
 
         response = api.post(
             "/api/appointments/",
-            {
+            {"resource": booking_resource.id,
                 "business": self.business.id,
                 "client": client.id,
                 "service": service.id,
@@ -1021,6 +1027,7 @@ class CorePlatformTests(TestCase):
         self.assertEqual(response.data["fields"], ["is_archived"])
 
     def test_direct_appointment_create_replays_idempotency_key(self):
+        booking_resource = Resource.objects.create(business=self.business, name="Booking specialist")
         api = APIClient()
         api.force_authenticate(self.owner)
         client = Client.objects.create(business=self.business, full_name="Idempotent appointment client")
@@ -1030,7 +1037,7 @@ class CorePlatformTests(TestCase):
             weekday=0,
             defaults={"start_time": time(9, 0), "end_time": time(18, 0)},
         )
-        payload = {
+        payload = {"resource": booking_resource.id,
             "business": self.business.id,
             "client": client.id,
             "service": service.id,
@@ -1130,6 +1137,7 @@ class CorePlatformTests(TestCase):
         self.assertEqual(WorkingHours.objects.filter(business=self.business, resource__isnull=True).count(), 0)
 
     def test_available_slots_appear_after_working_hours_preset(self):
+        booking_resource = Resource.objects.create(business=self.business, name="Booking specialist")
         api = APIClient()
         api.force_authenticate(self.owner)
         service = Service.objects.create(business=self.business, name="Consultation", duration_minutes=60)
@@ -1141,13 +1149,14 @@ class CorePlatformTests(TestCase):
 
         response = api.get(
             "/api/appointments/available-slots/",
-            {"business_id": self.business.id, "service_id": service.id, "date": "2026-05-11"},
+            {"resource_id": booking_resource.id, "business_id": self.business.id, "service_id": service.id, "date": "2026-05-11"},
         )
 
         self.assertEqual(response.status_code, 200)
         self.assertGreater(len(response.data), 0)
 
     def test_available_slots_can_exclude_current_appointment_for_reschedule(self):
+        booking_resource = Resource.objects.create(business=self.business, name="Booking specialist")
         api = APIClient()
         api.force_authenticate(self.owner)
         client = Client.objects.create(business=self.business, full_name="Client")
@@ -1165,11 +1174,12 @@ class CorePlatformTests(TestCase):
             service=service,
             start_at=start_at,
             end_at=start_at + timedelta(minutes=60),
+            resource=booking_resource,
         )
 
         response = api.get(
             "/api/appointments/available-slots/",
-            {
+            {"resource_id": booking_resource.id,
                 "business_id": self.business.id,
                 "service_id": service.id,
                 "date": "2026-05-11",
@@ -1182,6 +1192,7 @@ class CorePlatformTests(TestCase):
         self.assertIn(time(10, 0), slot_times)
 
     def test_appointment_api_rejects_slots_outside_working_hours(self):
+        booking_resource = Resource.objects.create(business=self.business, name="Booking specialist")
         api = APIClient()
         api.force_authenticate(self.owner)
         client = Client.objects.create(business=self.business, full_name="Client")
@@ -1195,7 +1206,7 @@ class CorePlatformTests(TestCase):
 
         response = api.post(
             "/api/appointments/",
-            {
+            {"resource": booking_resource.id,
                 "business": self.business.id,
                 "client": client.id,
                 "service": service.id,
@@ -1212,6 +1223,7 @@ class CorePlatformTests(TestCase):
         self.assertIn("outside working hours", str(response.data))
 
     def test_appointment_api_rejects_busy_slots(self):
+        booking_resource = Resource.objects.create(business=self.business, name="Booking specialist")
         api = APIClient()
         api.force_authenticate(self.owner)
         client = Client.objects.create(business=self.business, full_name="Client")
@@ -1229,11 +1241,12 @@ class CorePlatformTests(TestCase):
             service=service,
             start_at=start_at,
             end_at=start_at + timedelta(minutes=60),
+            resource=booking_resource,
         )
 
         response = api.post(
             "/api/appointments/",
-            {
+            {"resource": booking_resource.id,
                 "business": self.business.id,
                 "client": client.id,
                 "service": service.id,
@@ -1379,6 +1392,7 @@ class CorePlatformTests(TestCase):
         )
 
     def test_appointment_reschedule_rejects_busy_slot(self):
+        booking_resource = Resource.objects.create(business=self.business, name="Booking specialist")
         api = APIClient()
         api.force_authenticate(self.owner)
         client = Client.objects.create(business=self.business, full_name="Client")
@@ -1397,6 +1411,7 @@ class CorePlatformTests(TestCase):
             service=service,
             start_at=first_start,
             end_at=first_start + timedelta(minutes=60),
+            resource=booking_resource,
         )
         Appointment.objects.create(
             business=self.business,
@@ -1404,11 +1419,12 @@ class CorePlatformTests(TestCase):
             service=service,
             start_at=second_start,
             end_at=second_start + timedelta(minutes=60),
+            resource=booking_resource,
         )
 
         response = api.post(
             f"/api/appointments/{appointment.id}/reschedule/",
-            {"start_at": "2026-05-11T12:30:00+05:00"},
+            {"resource": booking_resource.id, "start_at": "2026-05-11T12:30:00+05:00"},
             format="json",
         )
 
@@ -1419,6 +1435,7 @@ class CorePlatformTests(TestCase):
         self.assertEqual(appointment.start_at, first_start)
 
     def test_appointment_reschedule_rejects_slots_outside_working_hours(self):
+        booking_resource = Resource.objects.create(business=self.business, name="Booking specialist")
         api = APIClient()
         api.force_authenticate(self.owner)
         client = Client.objects.create(business=self.business, full_name="Client")
@@ -1436,11 +1453,12 @@ class CorePlatformTests(TestCase):
             service=service,
             start_at=start_at,
             end_at=start_at + timedelta(minutes=60),
+            resource=booking_resource,
         )
 
         response = api.post(
             f"/api/appointments/{appointment.id}/reschedule/",
-            {"start_at": "2026-05-11T12:00:00+05:00"},
+            {"resource": booking_resource.id, "start_at": "2026-05-11T12:00:00+05:00"},
             format="json",
         )
 

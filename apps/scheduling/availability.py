@@ -3,12 +3,22 @@ from zoneinfo import ZoneInfo
 
 from django.db import transaction
 from django.utils import timezone
+from rest_framework.exceptions import ValidationError
 
 from apps.core.domain_errors import ScheduleConflict
-from apps.scheduling.models import Appointment, WorkingHours
+from apps.businesses.models import Business
+from apps.scheduling.models import Appointment, Resource, ScheduleException, WorkingHours
 
 
 SLOT_STEP_MINUTES = 30
+
+
+def require_booking_specialist(business, resource):
+    if resource is None or not Resource.objects.filter(
+        pk=resource.pk, business=business, is_active=True, resource_type=Resource.ResourceTypes.STAFF,
+    ).exists():
+        raise ValidationError({"resource": "Select an active specialist from this business."})
+
 
 WORKING_HOURS_PRESETS = {
     "weekdays_9_18": {
@@ -39,8 +49,12 @@ def business_zone(business):
         return ZoneInfo("UTC")
 
 
-def _working_hours_for(business, weekday, resource=None):
+def _working_hours_for(business, weekday, resource=None, date=None):
     if resource:
+        if date is not None:
+            exception = ScheduleException.objects.filter(business=business, resource=resource, date=date).first()
+            if exception:
+                return exception
         resource_hours = WorkingHours.objects.filter(
             business=business,
             resource=resource,
@@ -69,6 +83,7 @@ def apply_working_hours_preset(business, preset_key, resource=None):
     preset = WORKING_HOURS_PRESETS[preset_key]
     updated = []
     with transaction.atomic():
+        Business.objects.select_for_update().get(pk=business.pk)
         for weekday in range(7):
             hours, _ = WorkingHours.objects.update_or_create(
                 business=business,
@@ -89,9 +104,12 @@ def get_available_slots(business, service, date, resource=None, after_time=None,
         raise ValueError("Service must belong to the selected business.")
     if resource and resource.business_id != business.id:
         raise ValueError("Resource must belong to the selected business.")
+    if resource is None:
+        return []
+    require_booking_specialist(business, resource)
 
     weekday = date.weekday()
-    working_hours = _working_hours_for(business, weekday, resource=resource)
+    working_hours = _working_hours_for(business, weekday, resource=resource, date=date)
     if not working_hours or working_hours.is_day_off:
         return []
 
@@ -137,6 +155,7 @@ def validate_appointment_availability(business, service, start_at, resource=None
         raise ValueError("Service must belong to the selected business.")
     if resource and resource.business_id != business.id:
         raise ValueError("Resource must belong to the selected business.")
+    require_booking_specialist(business, resource)
 
     tz = business_zone(business)
     if timezone.is_naive(start_at):
@@ -146,7 +165,7 @@ def validate_appointment_availability(business, service, start_at, resource=None
     duration = timedelta(minutes=service.duration_minutes)
     end_at = start_at + duration
 
-    working_hours = _working_hours_for(business, local_start.date().weekday(), resource=resource)
+    working_hours = _working_hours_for(business, local_start.date().weekday(), resource=resource, date=local_start.date())
     if not working_hours or working_hours.is_day_off:
         raise ScheduleConflict(
             "The requested appointment time is outside working hours.",

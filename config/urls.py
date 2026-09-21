@@ -102,6 +102,7 @@ from apps.notifications.views import NotificationPreferenceViewSet, Notification
 from apps.onboarding.views import apply_onboarding_template, onboarding_demo_data, onboarding_first_message, onboarding_setup_channel, onboarding_status, onboarding_templates
 from apps.outreach.views import OutreachCampaignViewSet, OutreachConsentViewSet, OutreachRecipientViewSet, OutreachTemplateViewSet
 from apps.scheduling.views import AppointmentMessageSettingViewSet, AppointmentViewSet, ResourceViewSet, WorkingHoursViewSet
+from apps.scheduling.schedule_views import ScheduleExceptionViewSet
 from apps.services.views import ServiceViewSet
 from apps.tasks.views import TaskViewSet
 
@@ -131,6 +132,7 @@ router.register("lead-form-submissions", LeadFormSubmissionViewSet, basename="le
 router.register("lead-form-submission-errors", LeadFormSubmissionErrorViewSet, basename="lead-form-submission-error")
 router.register("resources", ResourceViewSet, basename="resource")
 router.register("working-hours", WorkingHoursViewSet, basename="working-hours")
+router.register("schedule-exceptions", ScheduleExceptionViewSet, basename="schedule-exception")
 router.register("appointments", AppointmentViewSet, basename="appointment")
 router.register("appointment-message-settings", AppointmentMessageSettingViewSet, basename="appointment-message-setting")
 router.register("conversations", ConversationViewSet, basename="conversation")

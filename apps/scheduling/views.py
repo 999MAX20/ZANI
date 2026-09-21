@@ -81,6 +81,22 @@ class ResourceViewSet(TenantModelViewSet):
     serializer_class = ResourceSerializer
     pagination_class = ResourcePagination
 
+    @transaction.atomic
+    def perform_create(self, serializer):
+        super().perform_create(serializer)
+
+    @transaction.atomic
+    def perform_update(self, serializer):
+        Business.objects.select_for_update().get(pk=serializer.instance.business_id)
+        super().perform_update(serializer)
+
+    def perform_destroy(self, instance):
+        raise ValidationError({"resource": "Deactivate this resource to preserve its schedule and appointment history."})
+
+    @transaction.atomic
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
+
     def get_queryset(self, apply_filters=True):
         individual_schedule = WorkingHours.objects.filter(
             business_id=OuterRef("business_id"),
@@ -156,6 +172,21 @@ class ResourceViewSet(TenantModelViewSet):
 class WorkingHoursViewSet(TenantModelViewSet):
     queryset = WorkingHours.objects.select_related("business", "resource")
     serializer_class = WorkingHoursSerializer
+
+    @transaction.atomic
+    def perform_create(self, serializer):
+        Business.objects.select_for_update().get(pk=serializer.validated_data["business"].pk)
+        super().perform_create(serializer)
+
+    @transaction.atomic
+    def perform_update(self, serializer):
+        Business.objects.select_for_update().get(pk=serializer.instance.business_id)
+        super().perform_update(serializer)
+
+    @transaction.atomic
+    def destroy(self, request, *args, **kwargs):
+        Business.objects.select_for_update().get(pk=self.get_object().business_id)
+        return super().destroy(request, *args, **kwargs)
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -251,6 +282,7 @@ class WorkingHoursViewSet(TenantModelViewSet):
             serializers.append(serializer)
 
         with transaction.atomic():
+            Business.objects.select_for_update().get(pk=business.pk)
             working_hours = [serializer.save() for serializer in serializers]
 
         serializer = self.get_serializer(working_hours, many=True)

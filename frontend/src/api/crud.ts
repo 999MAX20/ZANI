@@ -18,6 +18,16 @@ export function createCrudApi<T, C = Partial<T>, U = Partial<T>>(endpoint: strin
       const { data } = await apiClient.get<T[] | PaginatedResponse<T>>(endpoint, { params: cleanParams });
       return unwrapList<T>(data);
     },
+    listAll: async (params?: ListParams) => {
+      const cleanParams = isQueryFunctionContext(params) ? undefined : params;
+      const results: T[] = [];
+      for (let page = 1; ; page += 1) {
+        const { data } = await apiClient.get<T[] | PaginatedResponse<T>>(endpoint, { params: { ...cleanParams, page } });
+        if (Array.isArray(data)) return data;
+        results.push(...data.results);
+        if (!data.next) return results;
+      }
+    },
     get: async (id: Id) => {
       const { data } = await apiClient.get<T>(`${endpoint}${id}/`);
       return data;

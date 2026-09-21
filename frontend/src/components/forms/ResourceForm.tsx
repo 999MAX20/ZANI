@@ -29,6 +29,7 @@ export function ResourceForm({
   showContextHint = !initial?.id,
   disabled = false,
   onDirtyChange,
+  submitLabel,
 }: {
   businessId: Id;
   initial?: Partial<Resource>;
@@ -39,6 +40,7 @@ export function ResourceForm({
   showContextHint?: boolean;
   disabled?: boolean;
   onDirtyChange?: (isDirty: boolean) => void;
+  submitLabel?: string;
 }) {
   const { t } = useI18n();
   const activeTeamMembers = teamMembers.filter((member) => member.is_active);
@@ -128,7 +130,7 @@ export function ResourceForm({
         <input disabled={disabled} type="checkbox" className="h-4 w-4 rounded border-zani-border accent-brand-500 disabled:cursor-not-allowed disabled:opacity-60" {...form.register("is_active")} />
         {t("resources.available")}
       </label>
-      {showSubmit ? <Button type="submit" disabled={disabled} isLoading={form.formState.isSubmitting}>{t("resources.save")}</Button> : null}
+      {showSubmit ? <Button type="submit" disabled={disabled} isLoading={form.formState.isSubmitting}>{submitLabel || t("resources.save")}</Button> : null}
     </form>
   );
 }

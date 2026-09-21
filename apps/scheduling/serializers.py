@@ -3,9 +3,12 @@ from rest_framework import serializers
 from apps.accounts.models import User
 from apps.scheduling.models import Appointment, AppointmentMessageSetting, Resource, WorkingHours
 from apps.scheduling.services import validate_appointment_availability
+from apps.scheduling.resource_services import create_resource, validate_week, validate_staff_account
+from apps.scheduling.schedule_serializers import WeeklyDaySerializer
 
 
 class ResourceSerializer(serializers.ModelSerializer):
+    weekly_schedule = WeeklyDaySerializer(many=True, required=False, write_only=True)
     linked_user = serializers.PrimaryKeyRelatedField(queryset=User.objects.filter(is_active=True), required=False, allow_null=True)
     linked_user_name = serializers.SerializerMethodField()
     linked_user_email = serializers.EmailField(source="linked_user.email", read_only=True, allow_null=True)
@@ -25,6 +28,7 @@ class ResourceSerializer(serializers.ModelSerializer):
             "is_active",
             "appointment_count",
             "has_individual_schedule",
+            "weekly_schedule",
             "created_at",
             "updated_at",
         ]
@@ -48,6 +52,10 @@ class ResourceSerializer(serializers.ModelSerializer):
         return obj.working_hours.exists()
 
     def validate(self, attrs):
+        if "weekly_schedule" in attrs:
+            if self.instance is not None:
+                raise serializers.ValidationError({"weekly_schedule": "Use the working-hours editor to change an existing schedule."})
+            validate_week(attrs["weekly_schedule"])
         business = attrs.get("business") or getattr(self.instance, "business", None)
         linked_user = attrs.get("linked_user", getattr(self.instance, "linked_user", None))
         should_validate_link = self.instance is None or "linked_user" in attrs or "business" in attrs
@@ -57,6 +65,16 @@ class ResourceSerializer(serializers.ModelSerializer):
             if not linked_user.is_active or not (is_owner or is_member):
                 raise serializers.ValidationError({"linked_user": "Linked user must be an active member of the selected business."})
         return attrs
+
+    def create(self, validated_data):
+        return create_resource(**validated_data)
+
+    def update(self, instance, validated_data):
+        if {"linked_user", "resource_type"}.intersection(validated_data):
+            validate_staff_account(business=instance.business,
+                                   resource_type=validated_data.get("resource_type", instance.resource_type),
+                                   linked_user=validated_data.get("linked_user", instance.linked_user), exclude_id=instance.pk)
+        return super().update(instance, validated_data)
 
 
 class WorkingHoursSerializer(serializers.ModelSerializer):
@@ -190,7 +208,9 @@ class AppointmentSerializer(serializers.ModelSerializer):
             )
         if start_at and end_at and start_at >= end_at:
             raise serializers.ValidationError("start_at must be before end_at.")
-        if start_at and service and business:
+        # Historical/disabled specialists do not prevent editing notes. Schedule
+        # changes have a separate service and always revalidate the new specialist.
+        if self.instance is None and start_at and service and business:
             try:
                 calculated_end = validate_appointment_availability(
                     business,

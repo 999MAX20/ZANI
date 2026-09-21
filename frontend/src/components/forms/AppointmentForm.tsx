@@ -6,7 +6,7 @@ import { Link } from "react-router";
 import { z } from "zod";
 
 import { appointmentsApi, type AppointmentCreatePayload } from "../../api/appointments";
-import { workingHoursApi } from "../../api/workingHours";
+import { scheduleExceptionsApi, workingHoursApi } from "../../api/workingHours";
 import { dateInTimeZone, hourInTimeZone, todayInTimeZone } from "../../lib/format";
 import { useI18n } from "../../lib/i18n";
 import type { Appointment, Client, Id, Lead, Resource, Service, WorkingHours } from "../../types";
@@ -22,7 +22,7 @@ function createSchema(t: (key: string) => string) {
   return z.object({
     client: z.coerce.number().min(1, t("appointment.selectClient")),
     service: z.coerce.number().min(1, t("appointment.selectService")),
-    resource: z.coerce.number().optional(),
+    resource: z.coerce.number().min(1, t("appointment.selectSpecialist")),
     lead: z.coerce.number().optional(),
     date: z.string().min(1, t("appointment.dateRequired")),
     slot: z.string().optional(),
@@ -133,7 +133,7 @@ export function AppointmentForm({
   const selectedService = selectableServices.find((service) => service.id === Number(serviceId));
   const hasClients = clients.length > 0;
   const hasServices = selectableServices.length > 0;
-  const activeResources = resources.filter((resource) => resource.is_active);
+  const activeResources = resources.filter((resource) => resource.is_active && resource.resource_type === "staff");
   const hasResources = activeResources.length > 0;
   const locale = language === "en" ? "en-US" : language === "kk" ? "kk-KZ" : "ru-RU";
   const selectedDate = new Date(`${date}T00:00:00`);
@@ -158,7 +158,7 @@ export function AppointmentForm({
         resource_id: resourceId ? Number(resourceId) : "",
         date,
       }),
-    enabled: Boolean(businessId && serviceId && date && !initial),
+    enabled: Boolean(businessId && serviceId && resourceId && date && !initial),
   });
   const noSlots = !initial && !slots.isLoading && slots.data?.length === 0;
   const workingHours = useQuery({
@@ -166,7 +166,13 @@ export function AppointmentForm({
     queryFn: workingHoursApi.list,
     enabled: Boolean(noSlots),
   });
-  const selectedHours = noSlots ? getSelectedWorkingHours(workingHours.data || [], selectedWeekday, resourceId ? Number(resourceId) : null) : null;
+  const dateExceptions = useQuery({
+    queryKey: ["schedule-exceptions", businessId, resourceId, date],
+    queryFn: () => scheduleExceptionsApi.list({ business: businessId, resource: resourceId, date }),
+    enabled: Boolean(noSlots && resourceId && date),
+  });
+  const exception = dateExceptions.data?.[0];
+  const selectedHours = noSlots ? (exception ? { ...exception, weekday: selectedWeekday } : getSelectedWorkingHours(workingHours.data || [], selectedWeekday, resourceId ? Number(resourceId) : null)) : null;
   const noSlotsReasonKey = getNoSlotsReasonKey(selectedHours, selectedService?.duration_minutes || 30);
 
   useEffect(() => {
@@ -242,12 +248,6 @@ export function AppointmentForm({
           </Link>
         </div>
       ) : null}
-      {hasResources ? (
-        <div className="rounded-card border border-brand-100 bg-brand-50 p-4 text-sm text-brand-700">
-          <p className="font-semibold">{t("appointment.resourceOptionalTitle")}</p>
-          <p className="mt-1 leading-6">{t("appointment.resourceSelectedText")}</p>
-        </div>
-      ) : null}
       <div className="grid gap-4 sm:grid-cols-2">
         <Select label={t("appointment.client")} error={form.formState.errors.client?.message} options={[{ value: 0, label: t("appointment.selectClient") }, ...clients.map((client) => ({ value: client.id, label: client.full_name }))]} {...form.register("client")} />
         <Select label={t("appointment.service")} error={form.formState.errors.service?.message} options={[{ value: 0, label: t("appointment.selectService") }, ...selectableServices.map((service) => ({ value: service.id, label: `${service.name} · ${service.duration_minutes} ${t("appointment.minutes")}` }))]} {...form.register("service")} />
@@ -257,7 +257,7 @@ export function AppointmentForm({
           label={t("appointment.resource")}
           error={form.formState.errors.resource?.message}
           options={[
-            { value: "", label: t("appointment.businessSchedule") },
+            { value: "", label: t("appointment.selectSpecialist") },
             ...activeResources.map((resource) => ({ value: resource.id, label: resource.name })),
           ]}
           {...form.register("resource")}
@@ -306,10 +306,10 @@ export function AppointmentForm({
                 </p>
               ) : null}
               <div className="mt-3 flex flex-wrap gap-2">
-                <Button type="button" variant="secondary" isLoading={quickHoursMutation.isPending} onClick={() => quickHoursMutation.mutate()}>
+                {!exception ? <Button type="button" variant="secondary" isLoading={quickHoursMutation.isPending} onClick={() => quickHoursMutation.mutate()}>
                   {t("appointment.applyQuickHours")}
-                </Button>
-                <Link className="zani-focus-ring inline-flex min-h-10 items-center rounded-control px-4 py-2 font-semibold text-zani-warning underline-offset-4 hover:underline" to="/app/business/working-hours">
+                </Button> : null}
+                <Link className="zani-focus-ring inline-flex min-h-10 items-center rounded-control px-4 py-2 font-semibold text-zani-warning underline-offset-4 hover:underline" to={`/app/business/working-hours?view=resources&resource=${resourceId}&date=${date}`}>
                   {t("appointment.openHours")}
                 </Link>
               </div>

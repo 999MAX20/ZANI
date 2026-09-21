@@ -27,7 +27,7 @@ CONFIRMATION_SUGGEST_ONLY = "suggest_only"
 CONFIRMATION_AUTO_LEAD_TASK = "auto_lead_task"
 CONFIRMATION_DRAFT_DEAL = "draft_deal"
 CONFIRMATION_APPOINTMENT_EXPLICIT = "appointment_explicit"
-APPOINTMENT_CONFIRM_CLIENT_SLOT = "client_selected_offered_slot"
+APPOINTMENT_CONFIRM_STAFF = "staff_booking_required"
 
 
 @dataclass
@@ -40,7 +40,7 @@ class AutoPipelineConfig:
     allow_deal_intents: tuple[str, ...] = ("appointment_request", "purchase_interest", "price_question")
     require_review_on_fallback: bool = True
     create_appointment: bool = False
-    appointment_confirmation_mode: str = APPOINTMENT_CONFIRM_CLIENT_SLOT
+    appointment_confirmation_mode: str = APPOINTMENT_CONFIRM_STAFF
     auto_send_reply: bool = False
     max_auto_reply_chars: int = 900
 
@@ -148,7 +148,7 @@ def resolve_auto_pipeline_config(*, conversation: BotConversation, channel: BotC
         allow_deal_intents=tuple(raw.get("allow_deal_intents") or ("appointment_request", "purchase_interest", "price_question")),
         require_review_on_fallback=bool(raw.get("require_review_on_fallback", True)),
         create_appointment=create_appointment,
-        appointment_confirmation_mode=APPOINTMENT_CONFIRM_CLIENT_SLOT,
+        appointment_confirmation_mode=APPOINTMENT_CONFIRM_STAFF,
         auto_send_reply=bool(raw.get("auto_send_reply", False)),
         max_auto_reply_chars=max(120, min(_int(raw.get("max_auto_reply_chars"), 900), 2000)),
     )

@@ -19,6 +19,86 @@ type TokenPayload = {
 
 const tokenCache = new Map<string, TokenPayload>();
 
+test("specialist absence: create individual schedule and resolve every appointment", async ({ page, isMobile }) => {
+  test.setTimeout(120_000);
+  const tokens = await apiLogin(page, users.owner);
+  const headers = authHeaders(tokens);
+  const me = await (await page.request.get(`${apiBaseURL}/api/auth/me/`, { headers })).json();
+  const business = me.businesses[0].id;
+  const name = `Absence specialist ${Date.now()}`;
+  await login(page, users.owner, /\/app/);
+  await page.goto("/app/business/resources");
+  await page.locator('[data-testid="page-primary-action"]:visible').first().click();
+  const createModal = page.getByTestId("resource-create-modal");
+  await createModal.locator('input[name="name"]').fill(name);
+  await createModal.locator('button[type="submit"]').click();
+  await expect(page.getByTestId("resource-create-schedule")).toBeVisible();
+  await page.getByTestId("working-hours-preset-daily").click();
+  const createdResponse = page.waitForResponse((response) => response.url().endsWith("/api/resources/") && response.request().method() === "POST");
+  await createModal.locator('button[type="submit"]').click();
+  const created = await createdResponse;
+  expect(created.status()).toBe(201);
+  const specialist = await created.json();
+  expect(specialist.linked_user).toBeNull();
+  expect(specialist.has_individual_schedule).toBe(true);
+  await expect(createModal).not.toBeVisible();
+
+  async function create(path: string, data: Record<string, unknown>) {
+    const response = await page.request.post(`${apiBaseURL}/api/${path}/`, { headers, data: { business, ...data } });
+    expect(response.status(), await response.text()).toBe(201);
+    return response.json();
+  }
+  const week = Array.from({ length: 7 }, (_, weekday) => ({ weekday, start_time: "09:00", end_time: "20:00", is_day_off: false }));
+  const replacement = await create("resources", { name: `${name} replacement`, weekly_schedule: week });
+  // More than one API page of hours must not truncate this specialist's week.
+  for (let index = 0; index < 8; index += 1) {
+    await create("resources", { name: `${name} roster ${index}`, weekly_schedule: week });
+  }
+  const service = await create("services", { name: `${name} visit`, duration_minutes: 30, price_from: 100 });
+  const clients = await Promise.all([0, 1, 2].map((index) => create("clients", { full_name: `${name} patient ${index}` })));
+  const date = addDays(new Date().toISOString().slice(0, 10), 2);
+  const slotResponse = await page.request.get(`${apiBaseURL}/api/appointments/available-slots/`, {
+    headers, params: { business_id: business, service_id: service.id, resource_id: specialist.id, date },
+  });
+  expect(slotResponse.ok()).toBeTruthy();
+  const slots = await slotResponse.json();
+  expect(slots.length).toBeGreaterThanOrEqual(10);
+  for (let index = 0; index < 10; index += 1) {
+    await create("appointments", { client: clients[index % clients.length].id, service: service.id, resource: specialist.id, start_at: slots[index].start_at });
+  }
+  await page.goto(`/app/business/working-hours?view=resources&resource=${specialist.id}`);
+  await expect(page.getByTestId("weekly-working-hours-form")).toBeVisible();
+  await expect.poll(async () => page.getByTestId("weekly-working-hours-form").locator('input[type="time"]').evaluateAll((inputs) =>
+    inputs.map((input) => (input as HTMLInputElement).value))).toEqual(Array.from({ length: 7 }, () => ["09:00", "20:00"]).flat());
+  const panel = page.getByTestId("schedule-exceptions");
+  await expect(panel).toBeVisible();
+  await panel.locator('input[type="date"]').fill(date);
+  await panel.locator('input[type="checkbox"]').check();
+  await panel.locator('button[type="submit"]').click();
+  const review = page.getByTestId("absence-appointments-modal");
+  await expect(review).toBeVisible();
+  await expect(review.getByText("Осталось записей: 10. Клиентов: 3.", { exact: true })).toBeVisible();
+  await expect(review.locator("li")).toHaveCount(10);
+  const blocked = await page.request.get(`${apiBaseURL}/api/appointments/available-slots/`, {
+    headers, params: { business_id: business, service_id: service.id, resource_id: specialist.id, date },
+  });
+  expect(await blocked.json()).toEqual([]);
+  await review.getByRole("button", { name: "Заменить специалиста / перенести", exact: true }).first().click();
+  await review.getByTestId("appointment-reschedule-resource").selectOption(String(replacement.id));
+  await expect.poll(async () => review.getByTestId("appointment-reschedule-slot").locator("option").count()).toBeGreaterThan(1);
+  await review.getByTestId("appointment-reschedule-slot").selectOption(slots[0].start_at);
+  await review.getByTestId("appointment-reschedule-submit").click();
+  await expect(review.getByText("Осталось записей: 9. Клиентов: 3.", { exact: true })).toBeVisible();
+  await review.getByRole("button", { name: "Отменить", exact: true }).first().click();
+  const confirmation = page.getByRole("dialog").last();
+  await confirmation.locator("textarea").fill("Специалист отсутствует, клиент отказался от переноса");
+  await confirmation.getByRole("button", { name: "Подтвердить", exact: true }).click();
+  await expect(review.getByText("Осталось записей: 8. Клиентов: 3.", { exact: true })).toBeVisible();
+  await expect(review.locator("li")).toHaveCount(8);
+  await expectNoHorizontalOverflow(page);
+  await page.screenshot({ path: `../output/playwright/specialist-absence-${isMobile ? "mobile" : "desktop"}.png`, fullPage: true });
+});
+
 test("mobile manager smoke: daily CRM routes are reachable", async ({
   page,
   isMobile,

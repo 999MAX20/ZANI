@@ -37,7 +37,7 @@ export function AppointmentRescheduleForm({
   const [slot, setSlot] = useState("");
   const [reason, setReason] = useState("");
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const activeResources = resources.filter((item) => item.is_active);
+  const activeResources = resources.filter((item) => item.is_active && item.resource_type === "staff");
 
   const slots = useQuery({
     queryKey: ["available-slots", businessId, appointment.service, resource, date, "reschedule", appointment.id],
@@ -49,7 +49,7 @@ export function AppointmentRescheduleForm({
         date,
         exclude_appointment_id: appointment.id,
       }),
-    enabled: Boolean(businessId && appointment.service && date),
+    enabled: Boolean(businessId && appointment.service && resource && date),
   });
 
   const slotOptions = useMemo(
@@ -67,7 +67,7 @@ export function AppointmentRescheduleForm({
       className="space-y-4"
       onSubmit={async (event) => {
         event.preventDefault();
-        if (!slot) {
+        if (!resource || !slot) {
           setSubmitError(t("appointment.selectSlotError"));
           return;
         }
@@ -105,7 +105,7 @@ export function AppointmentRescheduleForm({
             setResource(event.target.value);
             setSlot("");
           }}
-          options={[{ value: "", label: t("appointment.noResource") }, ...activeResources.map((item) => ({ value: String(item.id), label: item.name }))]}
+          options={[{ value: "", label: t("appointment.selectSpecialist") }, ...activeResources.map((item) => ({ value: String(item.id), label: item.name }))]}
         />
       </div>
       {slots.isLoading ? <LoadingState /> : null}

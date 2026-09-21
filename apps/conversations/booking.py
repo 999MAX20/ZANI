@@ -6,18 +6,17 @@ from datetime import datetime
 from typing import Any
 
 from django.utils import timezone
+from django.db import transaction
 
 from apps.activities.services import create_activity_event
 from apps.activities.taxonomy import ActivityEvents
-from apps.bots.inbox_service import send_outbound_message
 from apps.bots.models import BotConversation, BotMessage
 from apps.businesses.access import Resources
+from apps.businesses.models import Business
 from apps.businesses.capabilities import assert_resource_enabled
 from apps.core.audit import write_actor_audit_log
 from apps.core.models import AuditLog
 from apps.leads.services import can_mark_lead_appointment_created, mark_lead_appointment_created
-from apps.notifications.models import Notification
-from apps.notifications.routing import MANAGER_ROLES, create_role_notification
 from apps.scheduling.models import Appointment, Resource
 from apps.scheduling.services import schedule_appointment_followups, validate_appointment_availability
 from apps.services.models import Service
@@ -57,83 +56,16 @@ def maybe_create_appointment_from_reply(*, conversation: BotConversation, messag
     slot = _select_offered_slot(conversation=conversation, text=message.text)
     if not slot:
         return BookingResult(status="skipped", reason="No offered slot matched the client reply.")
-    if not conversation.client_id or not conversation.lead_id:
-        return BookingResult(status="blocked_missing_crm", reason="Conversation must have client and lead before booking.")
-
-    service = Service.objects.filter(id=slot.get("service_id"), business=conversation.business, is_active=True).first()
-    if service is None:
-        return _booking_blocked(conversation, "Выбранная услуга недоступна. Проверьте каталог услуг.")
-    resource = None
-    if slot.get("resource_id"):
-        resource = Resource.objects.filter(id=slot.get("resource_id"), business=conversation.business, is_active=True).first()
-        if resource is None:
-            return _booking_blocked(conversation, "Выбранный специалист/ресурс недоступен. Проверьте расписание.")
-
-    try:
-        start_at = datetime.fromisoformat(str(slot["start_at"]))
-        if timezone.is_naive(start_at):
-            start_at = timezone.make_aware(start_at, timezone.get_current_timezone())
-        end_at = validate_appointment_availability(conversation.business, service, start_at, resource=resource)
-    except Exception as exc:
-        return _booking_blocked(conversation, f"Выбранный слот больше недоступен: {exc}")
-
-    if not can_mark_lead_appointment_created(conversation.lead):
-        return _booking_blocked(
-            conversation,
-            f"Cannot move lead from '{conversation.lead.status}' to appointment_created.",
-        )
-
-    appointment = Appointment.objects.create(
-        business=conversation.business,
-        client=conversation.client,
-        lead=conversation.lead,
-        service=service,
-        resource=resource,
-        start_at=start_at,
-        end_at=end_at,
-        status=Appointment.Statuses.CREATED,
-        source=_appointment_source(conversation.channel),
-        notes=f"Создано автоматически из диалога #{conversation.id}",
-    )
-    write_actor_audit_log(
-        actor=None,
-        action=AuditLog.Actions.CREATE,
-        instance=appointment,
-        metadata={
-            "event_type": ActivityEvents.APPOINTMENT_CREATED,
-            "source": "auto_booking",
-            "conversation_id": conversation.id,
-            "slot": slot,
-        },
-    )
-    mark_lead_appointment_created(
-        lead=conversation.lead,
-        actor=None,
-        service=service,
-        appointment=appointment,
-        resource=resource,
-        source="auto_booking",
-        activity_metadata={"conversation_id": conversation.id, "slot": slot},
-    )
-    schedule_appointment_followups(appointment, responsible_user=conversation.lead.responsible_user)
-    _save_booking_meta(conversation, status="booked", appointment=appointment, slot=slot)
-    create_activity_event(
-        business=conversation.business,
-        client=conversation.client,
-        instance=appointment,
-        event_type=ActivityEvents.APPOINTMENT_CREATED,
-        category="appointment",
-        source="auto_booking",
-        text=f"AI booking: запись создана на {timezone.localtime(appointment.start_at):%d.%m %H:%M}",
-        metadata={"event_type": ActivityEvents.APPOINTMENT_CREATED, "conversation_id": conversation.id, "slot": slot},
-    )
-    confirmation = _send_booking_confirmation(conversation, appointment)
-    _notify_booking_created(conversation, appointment)
-    return BookingResult(status="booked", appointment=appointment, confirmation_message=confirmation)
+    # A client reply selects a preference; only staff may commit a booking.
+    _save_booking_meta(conversation, status="requires_staff", slot=slot,
+                       reason="An authorized staff member must create the appointment.")
+    return BookingResult(status="requires_staff", reason="Staff booking is required.")
 
 
+@transaction.atomic
 def create_appointment_from_conversation(*, conversation: BotConversation, service_id: int, start_at, actor=None, resource_id: int | None = None, notes: str = "") -> Appointment:
     assert_resource_enabled(conversation.business, Resources.APPOINTMENTS)
+    Business.objects.select_for_update().get(pk=conversation.business_id)
     if not conversation.client_id:
         raise ValueError("Conversation must be linked to a client before booking an appointment.")
 
@@ -240,22 +172,6 @@ def _select_offered_slot(*, conversation: BotConversation, text: str) -> dict[st
     return matched[0] if len(matched) == 1 else None
 
 
-def _booking_blocked(conversation: BotConversation, reason: str) -> BookingResult:
-    _save_booking_meta(conversation, status="blocked", reason=reason)
-    create_role_notification(
-        business=conversation.business,
-        preferred_user=conversation.assigned_to or (conversation.lead.responsible_user if conversation.lead_id and conversation.lead.responsible_user_id else None),
-        roles=MANAGER_ROLES,
-        client=conversation.client,
-        category=Notification.Categories.SALES,
-        priority=Notification.Priorities.HIGH,
-        text=f"AI не смог создать запись: {reason}",
-        action_url=f"/app/conversations?conversation={conversation.id}",
-        action_label="Открыть чат",
-    )
-    return BookingResult(status="blocked", reason=reason)
-
-
 def _save_booking_meta(conversation: BotConversation, *, status: str, appointment: Appointment | None = None, slot=None, reason: str = "") -> None:
     metadata = dict(conversation.metadata_json or {})
     booking_meta = dict(metadata.get(BOOKING_META_KEY) or {})
@@ -271,28 +187,6 @@ def _save_booking_meta(conversation: BotConversation, *, status: str, appointmen
     metadata[BOOKING_META_KEY] = booking_meta
     conversation.metadata_json = metadata
     conversation.save(update_fields=["metadata_json", "updated_at"])
-
-
-def _send_booking_confirmation(conversation: BotConversation, appointment: Appointment) -> BotMessage:
-    local_start = timezone.localtime(appointment.start_at)
-    resource_text = f" у {appointment.resource.name}" if appointment.resource_id else ""
-    text = f"Готово, записали вас на {appointment.service.name}{resource_text}: {local_start:%d.%m в %H:%M}. За день до визита отправим подтверждение."
-    return send_outbound_message(conversation, text, user=None, sender_type=BotMessage.SenderTypes.BOT)
-
-
-def _notify_booking_created(conversation: BotConversation, appointment: Appointment) -> None:
-    create_role_notification(
-        business=conversation.business,
-        preferred_user=conversation.assigned_to or (conversation.lead.responsible_user if conversation.lead_id and conversation.lead.responsible_user_id else None),
-        roles=MANAGER_ROLES,
-        client=conversation.client,
-        appointment=appointment,
-        category=Notification.Categories.SALES,
-        priority=Notification.Priorities.NORMAL,
-        text=f"AI создал запись: {conversation.client.full_name} на {timezone.localtime(appointment.start_at):%d.%m %H:%M}",
-        action_url=f"/app/calendar?appointment={appointment.id}",
-        action_label="Открыть запись",
-    )
 
 
 def _appointment_source(channel: str) -> str:

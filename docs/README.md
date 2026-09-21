@@ -30,6 +30,8 @@ Use this index first when you need to understand where a document belongs. Keep 
 Use `crm/` for current CRM domain plans and lifecycle rules. Completed checklists are historical evidence, not a second backlog.
 
 - `crm/CRM_PRODUCTION_LAYER_PLAN.md`
+- [Специалист и отсутствие](crm/specialist-scheduling.md) — индивидуальный график,
+  разбор записей при форс-мажоре и отдельно желаемая рассылка клиентам.
 - [CRM entity behavior contract](crm/CRM_ENTITY_BEHAVIOR_CONTRACT.md) — draft rules for entity relationships, lifecycles, AI boundaries and cross-product audit acceptance; proposals require approval.
 - `crm/CRM_IMPLEMENTATION_TASKS.md` — archive redirect; completed checklist.
 - `crm/CRM_AUDIT_REQUIRED_CHANGES.md` — archive redirect; closed audit.

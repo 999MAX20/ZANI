@@ -167,6 +167,17 @@ class Command(BaseCommand):
         )
         steps.append(self._step("client selected slot", second.status_code == 201, f"status={second.status_code}"))
         conversation.refresh_from_db()
+        steps.append(self._step("client preference requires staff booking",
+                                not Appointment.objects.filter(business=business, client=conversation.client).exists()
+                                and conversation.metadata_json.get("auto_booking", {}).get("status") == "requires_staff",
+                                "No automatic booking after client reply"))
+        api.force_authenticate(owner)
+        chosen_slot = offered_slots[0] if offered_slots else {}
+        booking = api.post(f"/api/inbox/conversations/{conversation.id}/create-appointment/", {
+            "service_id": chosen_slot.get("service_id"), "resource_id": chosen_slot.get("resource_id"),
+            "start_at": chosen_slot.get("start_at"),
+        }, format="json")
+        steps.append(self._step("staff creates appointment", booking.status_code == 201, f"status={booking.status_code}"))
         appointment = Appointment.objects.filter(business=business, client=conversation.client, lead=conversation.lead).first()
         steps.append(self._step("appointment created", appointment is not None, f"appointment_id={appointment.id if appointment else None}"))
 

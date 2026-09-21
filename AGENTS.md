@@ -70,13 +70,26 @@ user to request a summary; strict read-only requests still prohibit file writes.
 One scope has one active owner. Do not repeat completed work, invent readiness
 percentages, restart exhausted checks or expand the latest authorized scope.
 Compaction does not authorize commits, new product scope or moving worktrees.
-The owner explicitly authorized primary-task replacement on 2026-09-21:
-read `actual_docs/PROJECT_HANDOFF.md`, `.codex/project-session.json`,
+Owner decision 2026-09-21 supersedes automatic handoff on compaction: restore
+the checkpoint, recheck Git and continue the same agreed task in the same chat.
+Neither a nearly full context window nor actual compaction permits task creation,
+transfer or archival. Do not disable engine compaction or split the agreed scope
+retroactively to declare a convenient subtask complete.
+Read `actual_docs/PROJECT_HANDOFF.md`, `.codex/project-session.json`,
 `docs/testing/task-state/PRIMARY-SESSION.md` and `docs/testing/SESSION_ROLLOVER.md`.
-Only the registered primary may perform that two-phase create/check/archive
-handoff. Non-primary and retired tasks cannot begin product writes or rotate.
-The current owner remains frozen until the successor's comprehension is checked;
-no new phase is authorized by transfer. Hooks require separate review/trust.
+Handoff is allowed only after the entire current DoD, required checks/review,
+agreed publication and actual CI (when required) are complete, owned operations
+have finished, and successor comprehension has been verified. FAILED, BLOCKED,
+PENDING and unknown are unfinished: preserve the checkpoint and attempt limits,
+report the issue and defer rotation. A completed governance edit does not close
+another unfinished task or authorize the next product phase.
+Only the registered primary initiates an eligible handoff. Non-primary and
+retired tasks cannot start product writes or rotate. A recorded, pre-validated
+successor or the registered orchestrator may idempotently finalize only that
+same confirmed transition after native archive readback, without relying on the
+archived source to resume. Unknown tasks cannot infer ownership; incomplete
+evidence keeps the transition frozen. Hooks stay read-only and require separate
+review/trust; unit tests do not prove runtime activation.
 
 ## Current Source Of Truth
 

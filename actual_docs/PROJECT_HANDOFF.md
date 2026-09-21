@@ -1,5 +1,25 @@
 # ZANI Project Handoff
 
+## Действующее правило continuity — уточнение владельца 2026-09-21
+
+Compact и близость конца окна: восстановить checkpoint, сверить Git и продолжить
+ту же согласованную задачу в том же чате. Прежняя автоматическая передача отменена.
+Ротация только после полного DoD, checks/review, согласованного push с фактическим
+CI где требуется, завершения операций и проверенного comprehension. FAILED,
+BLOCKED, PENDING и unknown не означают завершения; не дробить scope ради ротации.
+
+Подтверждённый pending transition может идемпотентно завершить записанный проверенный
+преемник или зарегистрированный Оркестратор после native archive readback, без
+зависимости от возобновления архивированного source. Guards и trust сохраняются.
+Точный [протокол](../docs/testing/SESSION_ROLLOVER.md) и
+[checkpoint](../docs/testing/task-state/PRIMARY-SESSION.md) обязательны.
+
+Git-пакет CRM завершён на `31a8b5f`: normal push/readback и
+[CI](https://github.com/999MAX20/ZANI/actions/runs/35603891558) success.
+Следом разрешена только отдельная governance-правка этих правил и read-only hook;
+это не scheduling/features, Market или фактическая ротация. Runtime trust hook
+не подтверждается unit-тестами.
+
 ## Единая база контекста четырёх задач — 2026-09-21
 
 Последующее решение владельца 21.09: каноническое содержимое разрешено

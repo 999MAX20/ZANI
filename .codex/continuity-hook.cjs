@@ -13,6 +13,21 @@ function inside(root, cwd) {
 function validId(value) {
   return typeof value === 'string' && /^[a-zA-Z0-9_-]{1,128}$/u.test(value);
 }
+function canFinalizeRecordedHandoff(id, registry) {
+  const handoff = registry.handoff;
+  return registry.transition === 'awaiting_archive' && handoff &&
+    Number.isSafeInteger(registry.generation) && registry.generation > 0 &&
+    handoff.generation === registry.generation &&
+    validId(handoff.sourceThreadId) && validId(handoff.successorThreadId) &&
+    handoff.sourceThreadId !== handoff.successorThreadId &&
+    handoff.successorThreadId === registry.successorThreadId &&
+    handoff.successorThreadId === registry.primaryThreadId &&
+    (registry.retiredThreadIds || []).includes(handoff.sourceThreadId) &&
+    handoff.completionStatus === 'complete' && handoff.sourceDoDVerified === true &&
+    handoff.comprehensionVerified === true &&
+    (id === handoff.successorThreadId ||
+      (validId(registry.orchestratorThreadId) && id === registry.orchestratorThreadId));
+}
 function result(eventName, context, stop = false) {
   const out = {hookSpecificOutput: {hookEventName: eventName, additionalContext: context}};
   if (stop) {
@@ -38,25 +53,33 @@ function buildResponse(event, registry) {
     return result(eventName, intro + 'RETIRED OWNER. No product or Git writes. Continue in primary task ' + registry.primaryThreadId + '.',
       eventName === 'SessionStart');
   }
+  if (canFinalizeRecordedHandoff(id, registry)) {
+    return result(eventName, intro +
+      'HANDOFF_FINALIZATION_ONLY. No product writes. You are the recorded validated successor or orchestrator for this same generation. ' +
+      'Recheck completed source DoD, required checks/review/publication/actual CI and comprehension evidence; registry flags alone are not proof. ' +
+      'Require native archive readback for the recorded source before an idempotent metadata-only release: clear the pending successor/transition and record the release once. ' +
+      'Do not depend on the archived source resuming, create another task, archive a different task, increment generation again or infer a new work scope. ' +
+      'Missing evidence or archive confirmation keeps the existing transition frozen. After release, wait for separately authorized work.');
+  }
   if (id !== registry.primaryThreadId) {
     return result(eventName, intro + 'You are not the registered primary owner. Read-only comprehension/audit only unless the current user explicitly changes ownership. Do not rotate this task, create another primary, start product work or archive another task.');
   }
   if (registry.transition !== 'idle' || registry.successorThreadId) {
     return result(eventName, intro + 'HANDOFF_TRANSITION_IN_PROGRESS. No product writes and no new independent rollover. Read the existing transition and checkpoint; recover only that same handoff. If a successor is already recorded, reuse and inspect it, never create a duplicate. During initial bootstrap the orchestrator retains control; perform only the requested read-only comprehension.');
   }
-  if (eventName === 'SessionStart' && event.source === 'compact' && registry.autoHandoffEnabled === true) {
+  if (eventName === 'SessionStart' && event.source === 'compact') {
     return result(eventName, intro +
-      'AUTOMATIC_PROJECT_HANDOFF_REQUIRED: the owner authorized replacement of the primary task after context compaction on 2026-09-21. ' +
-      'Before any more product edits, follow the two-phase procedure in the protocol: persist the exact unfinished authorized scope and evidence, freeze source writes, reuse an already recorded successor or create exactly one fresh task in this saved project using environment.type=local, never a worktree or fork. ' +
-      'Have the successor perform read-only comprehension; inspect its reply, then transfer ownership, archive this source through the native Codex tool and release the successor to the same unfinished authorized scope. ' +
-      'Do not replay the entire backlog, reset attempt budgets, bypass hook trust, commit WIP just because of compaction, or claim archive/create succeeded without readback. ' +
-      'If app tools or trust are unavailable, or creation has an uncertain result, stop safely and report the blocker; do not retry blind or resume writing in the old task.');
+      'COMPACTION_RESTORE_CONTINUE. Restore the checkpoint, verify Git and evidence, then continue the same task within its existing authorization. ' +
+      'Compaction and a nearly full context window never request creation, transfer or archival of tasks. Do not disable engine compaction. ' +
+      'Defer any handoff until the entire agreed DoD, checks/review, required publication and actual CI are complete, operations have finished, and successor comprehension is verified. ' +
+      'FAILED/BLOCKED/PENDING/unknown are unfinished: preserve the checkpoint and attempt limits, report the blocker, and never rotate to bypass it or split the agreed scope retroactively. ' +
+      'This read-only hook neither verifies completion nor authorizes a handoff; do not bypass trust or replay completed work.');
   }
   return result(eventName, intro +
     'Maintain the existing task checkpoint after meaningful milestones and before handoff; do not wait for a full context window. ' +
-    (registry.autoHandoffEnabled === true
-      ? 'On a known compaction follow the authorized protocol even if hook execution is unavailable; disclose that limitation. '
-      : 'Automatic rollover is disabled. Do not create or archive tasks on compaction. Restore the checkpoint in this task. ') +
+    'On compaction or a nearly full context window, restore and continue in this task; never create, transfer or archive tasks for that reason. ' +
+    'Handoff is deferred until the entire agreed DoD, checks/review, required publication/actual CI and operations are complete, followed by verified comprehension. ' +
+    'FAILED/BLOCKED/PENDING/unknown never count as completion. Do not split the agreed scope to bypass this gate. ' +
     'One writer, unchanged task scope and acceptance criteria; no auto-next-phase. Preserve valid checks and failed-attempt counts. ' +
     'Only the recorded primary owns implementation; latest explicit stop/read-only instructions override automatic continuation.');
 }
@@ -69,7 +92,7 @@ if (require.main === module) {
     process.stdout.write(JSON.stringify(buildResponse(event, registry)));
   } catch {
     process.stdout.write(JSON.stringify({
-      systemMessage: 'Project continuity hook failed to read validated metadata. No files or tasks were changed. Check .codex/project-session.json and do not claim automatic handoff is active.'
+      systemMessage: 'Project continuity hook failed to read validated metadata. No files or tasks were changed. Check .codex/project-session.json; compaction never authorizes a handoff.'
     }));
   }
 }

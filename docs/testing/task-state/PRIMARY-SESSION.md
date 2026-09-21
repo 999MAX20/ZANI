@@ -2,6 +2,80 @@
 
 Дата: 2026-09-21. Это карточка исполнения, не продуктовый backlog.
 
+## Активный bounded governance change — продолжение после compact
+
+Owner decision 2026-09-21 через Оркестратор; единственный writer остаётся
+`01a0c36e-33aa-7c72-be9b-72624dd2c739`. Root `C:\Users\user\Desktop\Zani`,
+branch `codex/ui-testing-toolkit`, clean starting HEAD и fetched origin/main
+`31a8b5f0fc0f4cfb94589206139b42314a0d0f85`.
+
+Предыдущий Git-пакет полностью завершён ДО начала этой правки: normal push,
+remote readback совпал, оба jobs и [CI run](https://github.com/999MAX20/ZANI/actions/runs/35603891558)
+success; полный local gate и финальный static/docs PASS. Его квитанция:
+`output/git-publication-20260921/publication-result.json`.
+
+- Mode: governance implementation + focused verification; gap: прежняя политика
+  ошибочно требовала передачи незавершённой работы при compact.
+- Outcome: compact/приближение конца окна всегда restore/recheck/continue в той же
+  задаче. Ротация возможна только после полного согласованного DoD, checks/review,
+  публикации с фактическим CI где требуется, завершения операций и comprehension.
+  FAILED/BLOCKED/PENDING/unknown не означают завершения; задачу не дробить ради
+  формального готового подпункта. Сжатие движка не отключать.
+- Scope/reuse: существующие AGENTS, task template, SESSION_ROLLOVER, handoff,
+  checkpoint, project-session registry и read-only Node hook/hooks/unit tests.
+  Защиты retired/non-primary/unfinished transition сохранить. Добавить только
+  ограниченное идемпотентное завершение уже проверенной передачи записанным
+  преемником/оркестратором после native archive readback, без захвата ownership.
+- Non-goals: реальная ротация/новые задачи/worktrees, trust bypass, Market,
+  scheduling/features, продуктовые permissions/notification/BusinessEvent/AI,
+  schema/env/deploy и working DB. Runtime hook activation остаётся не доказана.
+- Gates: meaningful node unit/CLI regressions; JSON/metadata consistency,
+  changed links/commands, retired/non-primary/transition decisions, complete
+  intended diff/secrets review, working/index/committed-range hygiene. Только
+  эти профильные local gates; продуктовые suites не повторять. Отдельный reviewed
+  commit/normal push origin/main и реальный применимый CI обязательны.
+- Starting snapshot/попытки/evidence: `output/governance-continuity-20260921/`.
+  Первичная сверка выявила только stale remote-tracking main из-за ограниченного
+  fetch-refspec: FETCH_HEAD и ls-remote уже равнялись base. Explicit non-forced
+  fetch main:origin/main обновил локальную tracking-ссылку; source drift не было.
+- Реализовано: compact всегда restore/continue, legacy auto flag игнорируется;
+  complete DoD/comprehension и совпадающие участники/generation нужны для узкого
+  HANDOFF_FINALIZATION_ONLY. Native archive readback остаётся обязательным; hook
+  сам не меняет registry. Guards для retired/unknown/non-primary/stale proof
+  сохранены; engine compaction и hook trust не менялись.
+- Reproducer на старом hook: 26 tests, 11 ожидаемых FAIL; после fix и дополнительных
+  проверок 28/28 PASS. Есть active/failed/blocked/pending/unknown/missing cases,
+  stale generation/identity/proof, повторяемость, отсутствие мутаций, реальный CLI.
+  AGENTS/template/protocol/registry/hooks/handoff/checkpoint синхронизированы.
+- Источник механики прочитан через OpenAI Docs:
+  https://learn.chatgpt.com/docs/hooks#sessionstart. Это подтверждает формат hook,
+  а политика завершения/передачи принадлежит владельцу проекта.
+- Профильный local gate PASS: 28 unit/CLI tests, syntax, JSON/metadata, 5 changed
+  local links, diff hygiene; весь diff девяти paths reviewed. Product inputs,
+  primary/generation/retired IDs и trust status не изменились.
+- Завершающий шаг: отдельный commit/normal push/readback и фактический CI.
+  Состояние этого отдельного пакета, точный SHA,
+  команды и CI result сохраняются в `output/governance-continuity-20260921/result.json`;
+  при resume прочитать квитанцию, не повторять завершённое. После success остановиться.
+  Реальная передача не запускается; никаких scheduling/features.
+
+Профильные команды из canonical root:
+
+```powershell
+node --check .codex/continuity-hook.cjs
+node --check .codex/continuity-hook.test.cjs
+node --test .codex/continuity-hook.test.cjs
+.\.venv\Scripts\python.exe output/governance-continuity-20260921/verify.py
+git diff --check
+git diff --cached --check
+git diff --check 31a8b5f0fc0f4cfb94589206139b42314a0d0f85...HEAD
+```
+
+Продуктовые local suites/build/migration checks для governance не повторяются:
+их inputs не менялись. Существующий push CI применяется как настроен; его PASS
+проверяется отдельно. Runtime activation/trust и реальная передача не тестируются:
+не входят в разрешённую правку; статус REQUIRES_REVIEW_AND_TRUST сохраняется.
+
 ## Git-пакет — проверенный кандидат и публикационная квитанция (2026-09-21)
 
 - Единственный owner/writer: primary `01a0c36e-33aa-7c72-be9b-72624dd2c739`;

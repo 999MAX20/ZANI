@@ -1,5 +1,5 @@
 {
-  "description": "Read-only event adapter. SessionStart compact requests owner-authorized two-phase handoff via native app tools. Exact hooks require user review/trust; no direct task, file, Git or network writes.",
+  "description": "Read-only continuity adapter. Compact restores and continues the same task; unfinished scope defers handoff. Recorded validated successor/orchestrator may only recover confirmed handoff finalization. Exact hooks require review/trust; no direct task, file, Git or network writes.",
   "hooks": {
     "SessionStart": [
       {
@@ -11,7 +11,7 @@
             "commandWindows": "node \"C:\\Users\\user\\Desktop\\Zani\\.codex\\continuity-hook.cjs\"",
             "timeout": 5,
             "additionalContextLimit": 5000,
-            "statusMessage": "Restore project state / request safe handoff after compaction"
+            "statusMessage": "Restore project state and continue the current task"
           }
         ]
       }
@@ -25,7 +25,7 @@
             "commandWindows": "node \"C:\\Users\\user\\Desktop\\Zani\\.codex\\continuity-hook.cjs\"",
             "timeout": 5,
             "additionalContextLimit": 5000,
-            "statusMessage": "Restore project state / request safe handoff after compaction"
+            "statusMessage": "Restore project state and continue the current task"
           }
         ]
       }

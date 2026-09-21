@@ -7,7 +7,11 @@
   "primaryThreadId": "01a0c36e-33aa-7c72-be9b-72624dd2c739",
   "successorThreadId": null,
   "transition": "idle",
-  "autoHandoffEnabled": true,
+  "autoHandoffEnabled": false,
+  "compactionPolicy": "restore_same_thread",
+  "handoffPolicy": "completed_scope_only",
+  "orchestratorThreadId": "01a02859-08f3-7082-920d-49400f0fbb09",
+  "handoff": null,
   "hookActivationStatus": "REQUIRES_REVIEW_AND_TRUST",
   "handoffPath": "actual_docs/PROJECT_HANDOFF.md",
   "checkpointPath": "docs/testing/task-state/PRIMARY-SESSION.md",
@@ -24,5 +28,5 @@
     "01a02954-6edd-74f2-8944-794408801f0d",
     "01a02916-4955-7491-a51e-6372a6d17ca8"
   ],
-  "lastAuthorization": "Owner requested consolidation and automatic same-scope handoff on 2026-09-21; no additional product implementation authorized."
+  "lastAuthorization": "Owner decision 2026-09-21: compact restores the same task; no rotation before the entire agreed DoD, checks/review, required publication/actual CI and operations are complete. Verified comprehension and the recorded handoff protocol are required. This supersedes automatic handoff on compact; no new product scope or current rotation authorized."
 }

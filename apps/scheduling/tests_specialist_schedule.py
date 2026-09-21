@@ -132,6 +132,48 @@ class SpecialistScheduleTests(TestCase):
         self.assertEqual(self.exception().status_code, 403)
         self.assertEqual(ScheduleException.objects.count(), 0)
 
+    def test_edit_specialist_retains_account_after_login_or_membership_is_disabled(self):
+        user = User.objects.create_user(username="linked-doctor", email="linked-doctor@example.test")
+        member = BusinessMember.objects.create(business=self.business, user=user, role=BusinessMember.Roles.SPECIALIST)
+        self.resource.linked_user = user
+        self.resource.save()
+        for account_active, member_active in ((False, True), (True, False)):
+            with self.subTest(account_active=account_active, member_active=member_active):
+                user.is_active = account_active
+                user.save()
+                member.is_active = member_active
+                member.save()
+                response = self.api.patch(f"/api/resources/{self.resource.id}/", {
+                    "business": self.business.id, "name": "Renamed doctor", "resource_type": "staff",
+                    "linked_user": user.id, "is_active": True,
+                }, format="json")
+                self.assertEqual(response.status_code, 200, response.data)
+                self.resource.refresh_from_db()
+                self.assertEqual(self.resource.linked_user_id, user.id)
+                self.assertEqual(self.resource.name, "Renamed doctor")
+                self.assertTrue(self.resource.is_active)
+
+    def test_new_account_link_rejects_inactive_accounts_members_and_foreign_users(self):
+        user = User.objects.create_user(username="new-linked-doctor", email="new-linked-doctor@example.test")
+        member = BusinessMember.objects.create(business=self.business, user=user, role=BusinessMember.Roles.SPECIALIST)
+        for account_active, member_active in ((False, True), (True, False)):
+            with self.subTest(account_active=account_active, member_active=member_active):
+                user.is_active = account_active
+                user.save()
+                member.is_active = member_active
+                member.save()
+                response = self.api.patch(f"/api/resources/{self.resource.id}/", {"linked_user": user.id}, format="json")
+                self.assertEqual(response.status_code, 400, response.data)
+                response = self.api.post("/api/resources/", {
+                    "business": self.business.id, "name": "New doctor", "linked_user": user.id,
+                }, format="json")
+                self.assertEqual(response.status_code, 400, response.data)
+        foreign_user = User.objects.create_user(username="foreign-doctor", email="foreign-doctor@example.test")
+        response = self.api.patch(f"/api/resources/{self.resource.id}/", {"linked_user": foreign_user.id}, format="json")
+        self.assertEqual(response.status_code, 400, response.data)
+        self.resource.refresh_from_db()
+        self.assertIsNone(self.resource.linked_user_id)
+
     def test_specialist_cannot_be_deleted_with_history(self):
         response = self.api.delete(f"/api/resources/{self.resource.id}/")
         self.assertEqual(response.status_code, 400)

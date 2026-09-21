@@ -9,7 +9,7 @@ from apps.scheduling.schedule_serializers import WeeklyDaySerializer
 
 class ResourceSerializer(serializers.ModelSerializer):
     weekly_schedule = WeeklyDaySerializer(many=True, required=False, write_only=True)
-    linked_user = serializers.PrimaryKeyRelatedField(queryset=User.objects.filter(is_active=True), required=False, allow_null=True)
+    linked_user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), required=False, allow_null=True)
     linked_user_name = serializers.SerializerMethodField()
     linked_user_email = serializers.EmailField(source="linked_user.email", read_only=True, allow_null=True)
     appointment_count = serializers.SerializerMethodField()
@@ -58,7 +58,13 @@ class ResourceSerializer(serializers.ModelSerializer):
             validate_week(attrs["weekly_schedule"])
         business = attrs.get("business") or getattr(self.instance, "business", None)
         linked_user = attrs.get("linked_user", getattr(self.instance, "linked_user", None))
-        should_validate_link = self.instance is None or "linked_user" in attrs or "business" in attrs
+        # Retain an existing account link when CRM access is later disabled.
+        # Only a new assignment must satisfy current account/membership rules.
+        should_validate_link = (
+            self.instance is None
+            or getattr(linked_user, "pk", None) != self.instance.linked_user_id
+            or getattr(business, "pk", None) != self.instance.business_id
+        )
         if should_validate_link and linked_user is not None and business is not None:
             is_owner = business.owner_id == linked_user.id
             is_member = business.members.filter(user=linked_user, is_active=True).exists()
@@ -70,10 +76,12 @@ class ResourceSerializer(serializers.ModelSerializer):
         return create_resource(**validated_data)
 
     def update(self, instance, validated_data):
-        if {"linked_user", "resource_type"}.intersection(validated_data):
+        linked_user = validated_data.get("linked_user", instance.linked_user)
+        resource_type = validated_data.get("resource_type", instance.resource_type)
+        if getattr(linked_user, "pk", None) != instance.linked_user_id or resource_type != instance.resource_type:
             validate_staff_account(business=instance.business,
-                                   resource_type=validated_data.get("resource_type", instance.resource_type),
-                                   linked_user=validated_data.get("linked_user", instance.linked_user), exclude_id=instance.pk)
+                                   resource_type=resource_type,
+                                   linked_user=linked_user, exclude_id=instance.pk)
         return super().update(instance, validated_data)
 
 

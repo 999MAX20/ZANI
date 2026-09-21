@@ -22,7 +22,7 @@ from apps.bots.models import Bot, BotConversation, BotMessage
 from apps.businesses.models import Business, BusinessMember
 from apps.clients.models import Client
 from apps.leads.models import Lead
-from apps.scheduling.models import Appointment, WorkingHours
+from apps.scheduling.models import Appointment, Resource, WorkingHours
 from apps.services.models import Service
 from apps.tasks.models import Task
 
@@ -73,6 +73,7 @@ class ActivityTimelineUnificationTests(TestCase):
 
     def test_appointment_create_cancel_and_task_complete_write_timeline_events(self):
         start_at = datetime(2026, 5, 13, 10, 0, tzinfo=ZoneInfo("Asia/Almaty"))
+        specialist = Resource.objects.create(business=self.business, name="Timeline specialist")
         WorkingHours.objects.create(
             business=self.business,
             weekday=start_at.weekday(),
@@ -86,6 +87,7 @@ class ActivityTimelineUnificationTests(TestCase):
                 "client": self.client.id,
                 "service": self.service.id,
                 "start_at": start_at.isoformat(),
+                "resource": specialist.id,
                 "end_at": (start_at + timedelta(hours=1)).isoformat(),
                 "source": Appointment.Sources.MANUAL,
             },

@@ -4,6 +4,18 @@
 
 ## Активная реализация — V1-F06 / V1-W02, специалист и индивидуальное расписание
 
+Актуальный checkpoint 2026-09-21 19:57 +05:00: candidate `b80d1ff` создан,
+но не опубликован. Full gate завершился: 1101 tests / 863.479s, один FAIL —
+старый activity fixture создавал запись без специалиста; timeline assertions
+сохранены, fixture исправлен. Отдельная isolated диагностика показала 400 вместо
+200 при сохранении ResourceForm с прежним отключённым linked_user. Исправление
+разрешает сохранение прежней связи, новые inactive/foreign назначения запрещены;
+добавлены регрессии. Focused scheduling + activities: 86 tests PASS / 38.129s,
+`focused-linked-account.log`. Следующий шаг: новый candidate и полный gate.
+`output/v1-scheduling-20260921/result.json` и report.md
+хранят текущую квитанцию, точные команды и старые/новые результаты. Публикация и
+CI ещё не выполнялись. Более ранние checkpoints ниже — история этой же фазы.
+
 - Owner authorization 2026-09-21: «согласен, приступай к реализации», включая
   собственный график специалиста; вопрос о креслах рассматривается отдельно.
 - Mode: implementation; gaps: code + UI/API evidence. Источник:

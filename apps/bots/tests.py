@@ -129,7 +129,7 @@ class BotsFoundationTests(TestCase):
         self.assertEqual(messages_response.data["count"], 1)
         self.assertEqual(messages_response.data["results"][0]["text"], "Hello")
 
-    def test_public_website_chat_creates_conversation_message_client_and_lead(self):
+    def test_public_website_chat_creates_intake_and_client_without_lead(self):
         bot = Bot.objects.create(business=self.business, name="Website bot", status=Bot.Statuses.ACTIVE)
         channel = BotChannel.objects.create(
             bot=bot,
@@ -151,14 +151,15 @@ class BotsFoundationTests(TestCase):
         self.assertEqual(response.status_code, 201)
         self.assertIsNotNone(response.data["conversation_id"])
         self.assertIsNotNone(response.data["client_id"])
-        self.assertIsNotNone(response.data["lead_id"])
+        self.assertIsNone(response.data["lead_id"])
         self.assertEqual(BotConversation.objects.count(), 1)
         self.assertEqual(BotMessage.objects.count(), 1)
         conversation = BotConversation.objects.get()
         self.assertEqual(conversation.business, self.business)
         self.assertEqual(conversation.client.full_name, "Website Lead")
-        self.assertEqual(conversation.lead.source, "website")
-        self.assertTrue(
+        self.assertIsNone(conversation.lead_id)
+        self.assertFalse(Lead.objects.exists())
+        self.assertFalse(
             BusinessEvent.objects.filter(
                 business=self.business,
                 source=BotConversation.Channels.WEBSITE,
@@ -237,14 +238,14 @@ class BotsFoundationTests(TestCase):
         self.assertEqual(response.status_code, 201)
         conversation = BotConversation.objects.get(public_id=response.data["conversation_id"])
         self.assertIsNotNone(conversation.client_id)
-        self.assertIsNotNone(conversation.lead_id)
+        self.assertIsNone(conversation.lead_id)
         self.assertIsNone(conversation.deal_id)
-        self.assertTrue(Task.objects.filter(business=self.business, client=conversation.client, lead=conversation.lead, deal__isnull=True).exists())
+        self.assertFalse(Task.objects.filter(business=self.business, client=conversation.client, lead=conversation.lead, deal__isnull=True).exists())
         auto_meta = conversation.metadata_json["auto_crm_pipeline"]
-        self.assertEqual(auto_meta["status"], "created_lead_task")
+        self.assertEqual(auto_meta["status"], "proposed_lead_task")
         self.assertEqual(auto_meta["qualification"]["intent"], "appointment_request")
-        self.assertEqual(auto_meta["confirmation_policy"]["mode"], "auto_lead_task")
-        self.assertEqual(auto_meta["confirmation_policy"]["allowed_auto_actions"], ["create_client", "create_lead", "create_task"])
+        self.assertEqual(auto_meta["confirmation_policy"]["mode"], "staff_confirmation")
+        self.assertEqual(auto_meta["confirmation_policy"]["allowed_auto_actions"], ["create_client"])
 
         second_response = self.api.post(
             f"/api/public/website-chat/{channel.public_token}/conversations/{conversation.public_id}/messages/",
@@ -255,8 +256,8 @@ class BotsFoundationTests(TestCase):
         self.assertEqual(second_response.status_code, 201)
         conversation.refresh_from_db()
         self.assertEqual(Client.objects.filter(business=self.business).count(), 1)
-        self.assertEqual(Lead.objects.filter(business=self.business, client=conversation.client).count(), 1)
-        self.assertEqual(Task.objects.filter(business=self.business, client=conversation.client, lead=conversation.lead).count(), 1)
+        self.assertEqual(Lead.objects.filter(business=self.business, client=conversation.client).count(), 0)
+        self.assertEqual(Task.objects.filter(business=self.business, client=conversation.client, lead=conversation.lead).count(), 0)
 
     @override_settings(AI_PROVIDER="mock", OPENAI_API_KEY="", OPENROUTER_API_KEY="")
     def test_public_website_chat_auto_pipeline_suggest_only_mode_never_creates_crm_entities(self):
@@ -292,18 +293,18 @@ class BotsFoundationTests(TestCase):
         self.assertFalse(Task.objects.filter(business=self.business).exists())
         auto_meta = conversation.metadata_json["auto_crm_pipeline"]
         self.assertEqual(auto_meta["status"], "qualified_only")
-        self.assertEqual(auto_meta["confirmation_policy"]["mode"], "suggest_only")
+        self.assertEqual(auto_meta["confirmation_policy"]["mode"], "staff_confirmation")
         self.assertEqual(auto_meta["confirmation_policy"]["allowed_auto_actions"], [])
         self.assertTrue(
             ActivityEvent.objects.filter(
                 business=self.business,
                 event_type="auto_pipeline_qualified_only",
-                metadata__confirmation_policy__mode="suggest_only",
+                metadata__confirmation_policy__mode="staff_confirmation",
             ).exists()
         )
 
     @override_settings(AI_PROVIDER="mock", OPENAI_API_KEY="", OPENROUTER_API_KEY="")
-    def test_public_website_chat_auto_pipeline_can_sell_and_create_draft_deal(self):
+    def test_public_website_chat_proposes_draft_deal_and_replies_without_creating_work(self):
         bot = Bot.objects.create(business=self.business, name="Website sales bot", status=Bot.Statuses.ACTIVE)
         channel = BotChannel.objects.create(
             bot=bot,
@@ -335,10 +336,10 @@ class BotsFoundationTests(TestCase):
         self.assertEqual(response.status_code, 201)
         conversation = BotConversation.objects.get(public_id=response.data["conversation_id"])
         self.assertIsNotNone(conversation.client_id)
-        self.assertIsNotNone(conversation.lead_id)
-        self.assertIsNotNone(conversation.deal_id)
-        self.assertTrue(Deal.objects.filter(business=self.business, client=conversation.client, lead=conversation.lead).exists())
-        self.assertTrue(Task.objects.filter(business=self.business, client=conversation.client, lead=conversation.lead, deal=conversation.deal).exists())
+        self.assertIsNone(conversation.lead_id)
+        self.assertIsNone(conversation.deal_id)
+        self.assertFalse(Deal.objects.filter(business=self.business, client=conversation.client, lead=conversation.lead).exists())
+        self.assertFalse(Task.objects.filter(business=self.business, client=conversation.client, lead=conversation.lead, deal=conversation.deal).exists())
         auto_reply = BotMessage.objects.filter(
             conversation=conversation,
             direction=BotMessage.Directions.OUTBOUND,
@@ -348,12 +349,12 @@ class BotsFoundationTests(TestCase):
         self.assertTrue(auto_reply.text)
         self.assertTrue(auto_reply.payload_json["auto_crm_pipeline"])
         auto_meta = conversation.metadata_json["auto_crm_pipeline"]
-        self.assertEqual(auto_meta["status"], "created_draft_deal")
+        self.assertEqual(auto_meta["status"], "proposed_draft_deal")
         self.assertEqual(auto_meta["auto_reply"]["message_id"], auto_reply.id)
-        self.assertEqual(auto_meta["confirmation_policy"]["mode"], "draft_deal")
+        self.assertEqual(auto_meta["confirmation_policy"]["mode"], "staff_confirmation")
         self.assertEqual(
             auto_meta["confirmation_policy"]["allowed_auto_actions"],
-            ["create_client", "create_lead", "create_task", "create_draft_deal"],
+            ["create_client"],
         )
 
     @override_settings(AI_PROVIDER="mock", OPENAI_API_KEY="", OPENROUTER_API_KEY="")
@@ -394,10 +395,10 @@ class BotsFoundationTests(TestCase):
         self.assertEqual(response.status_code, 201)
         conversation = BotConversation.objects.get(public_id=response.data["conversation_id"])
         self.assertIsNotNone(conversation.client_id)
-        self.assertIsNotNone(conversation.lead_id)
+        self.assertIsNone(conversation.lead_id)
         self.assertIsNone(conversation.deal_id)
         self.assertFalse(Deal.objects.filter(business=self.business, client=conversation.client).exists())
-        self.assertEqual(conversation.metadata_json["auto_crm_pipeline"]["status"], "created_lead_task")
+        self.assertEqual(conversation.metadata_json["auto_crm_pipeline"]["status"], "proposed_lead_task")
         self.assertEqual(conversation.metadata_json["auto_crm_pipeline"]["reason"], "Deal creation is disabled by the active agent profile.")
         self.assertNotIn(
             "create_draft_deal",
@@ -442,11 +443,11 @@ class BotsFoundationTests(TestCase):
         self.assertEqual(response.status_code, 201)
         conversation = BotConversation.objects.get(public_id=response.data["conversation_id"])
         self.assertIsNotNone(conversation.client_id)
-        self.assertIsNotNone(conversation.lead_id)
+        self.assertIsNone(conversation.lead_id)
         self.assertIsNone(conversation.deal_id)
         self.assertFalse(Deal.objects.filter(business=self.business, client=conversation.client).exists())
         auto_meta = conversation.metadata_json["auto_crm_pipeline"]
-        self.assertEqual(auto_meta["status"], "created_lead_task")
+        self.assertEqual(auto_meta["status"], "proposed_lead_task")
         self.assertEqual(auto_meta["reason"], "Deal creation is disabled for this business.")
         self.assertNotIn("create_draft_deal", auto_meta["confirmation_policy"]["allowed_auto_actions"])
 
@@ -500,7 +501,7 @@ class BotsFoundationTests(TestCase):
         )
         self.assertEqual(AIRequestLog.objects.filter(business=self.business, prompt_type="conversation_qualification").count(), ai_count_before)
         self.assertEqual(conversation.metadata_json["auto_crm_pipeline"]["status"], "skipped_handoff")
-        self.assertEqual(conversation.metadata_json["auto_crm_pipeline"]["confirmation_policy"]["mode"], "draft_deal")
+        self.assertEqual(conversation.metadata_json["auto_crm_pipeline"]["confirmation_policy"]["mode"], "staff_confirmation")
         self.assertTrue(
             ActivityEvent.objects.filter(
                 business=self.business,
@@ -613,8 +614,8 @@ class BotsFoundationTests(TestCase):
         conversation = BotConversation.objects.get(public_id=first_response.data["conversation_id"])
         self.assertTrue(conversation.metadata_json["auto_booking"]["offered_slots"])
         auto_meta = conversation.metadata_json["auto_crm_pipeline"]
-        self.assertEqual(auto_meta["confirmation_policy"]["mode"], "appointment_explicit")
-        self.assertEqual(auto_meta["confirmation_policy"]["requires_explicit_confirmation"], ["create_appointment"])
+        self.assertEqual(auto_meta["confirmation_policy"]["mode"], "staff_confirmation")
+        self.assertIn("create_appointment", auto_meta["confirmation_policy"]["staff_only_actions"])
         self.assertEqual(auto_meta["confirmation_policy"]["appointment_confirmation_mode"], "staff_booking_required")
         self.assertFalse(Appointment.objects.filter(business=self.business, client=conversation.client).exists())
 
@@ -630,6 +631,10 @@ class BotsFoundationTests(TestCase):
         self.assertEqual(conversation.metadata_json["auto_booking"]["status"], "requires_staff")
         selected_slot = conversation.metadata_json["auto_booking"]["offered_slots"][0]
         self.api.force_authenticate(self.owner)
+        self.assertIsNone(conversation.lead_id)
+        lead_response = self.api.post(f"/api/inbox/conversations/{conversation.id}/create-lead/", {}, format="json")
+        self.assertEqual(lead_response.status_code, 201, lead_response.data)
+        conversation.refresh_from_db()
         booking_response = self.api.post(
             f"/api/inbox/conversations/{conversation.id}/create-appointment/",
             {"service_id": service.id, "resource_id": resource.id, "start_at": selected_slot["start_at"]},
@@ -1603,7 +1608,8 @@ class InboxBackendTests(TestCase):
         self.assertEqual(conversation.business, self.business)
         self.assertEqual(conversation.channel, BotConversation.Channels.WEBSITE)
         self.assertEqual(conversation.unread_count, 1)
-        self.assertIsNotNone(conversation.lead)
+        self.assertIsNone(conversation.lead_id)
+        self.assertIsNotNone(conversation.client_id)
         self.assertEqual(BotMessage.objects.filter(conversation=conversation, direction=BotMessage.Directions.INBOUND).count(), 1)
 
         self.api.force_authenticate(self.owner)
@@ -2086,7 +2092,7 @@ class InboxBackendTests(TestCase):
 
         response = self.api.post(
             f"/api/inbox/conversations/{conversation.id}/run-pipeline/",
-            {"deal_title": "WhatsApp deal", "create_task": True},
+            {"deal_title": "WhatsApp deal", "create_task": True, "confirmed_actions": ["create_lead", "create_deal", "create_task"], "preview_id": preview_response.data["qualified_at"]},
             format="json",
         )
 
@@ -2142,7 +2148,7 @@ class InboxBackendTests(TestCase):
 
         second_response = self.api.post(
             f"/api/inbox/conversations/{conversation.id}/run-pipeline/",
-            {"deal_title": "WhatsApp deal", "create_task": True},
+            {"deal_title": "WhatsApp deal", "create_task": True, "confirmed_actions": ["create_lead", "create_deal", "create_task"], "preview_id": preview_response.data["qualified_at"]},
             format="json",
         )
 
@@ -2221,7 +2227,7 @@ class InboxBackendTests(TestCase):
 
         response = self.api.post(
             f"/api/inbox/conversations/{conversation.id}/run-pipeline/",
-            {"deal_title": "Stale preview deal", "create_task": True},
+            {"deal_title": "Stale preview deal", "create_task": True, "confirmed_actions": ["create_lead", "create_deal", "create_task"], "preview_id": preview_response.data["qualified_at"]},
             format="json",
         )
 

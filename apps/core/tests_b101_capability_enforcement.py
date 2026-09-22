@@ -185,6 +185,7 @@ class CapabilityEnforcementCustomActionTests(TestCase):
                 f"/api/inbox/conversations/{self.conversation.id}/run-pipeline/",
                 {
                     "use_ai_qualification": False,
+                    "confirmed_actions": ["create_lead", "create_deal"],
                     "create_lead": True,
                     "create_deal": True,
                     "create_task": False,

@@ -8,11 +8,12 @@ from typing import Any
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
+from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from apps.activities.services import create_activity_event
 from apps.activities.taxonomy import ActivityEvents
 from apps.bots.models import BotConversation
-from apps.businesses.access import Resources
+from apps.businesses.access import Actions, Resources, assert_can
 from apps.businesses.capabilities import assert_resource_enabled
 from apps.clients.models import Client
 from apps.conversations.ai_qualification import ConversationQualification, qualify_conversation
@@ -20,6 +21,7 @@ from apps.core.audit import write_actor_audit_log
 from apps.core.models import AuditLog
 from apps.crm.models import Deal, Pipeline, PipelineStage
 from apps.leads.models import Lead
+from apps.integrations.crm_mapping import record_lead_captured_event
 from apps.services.models import Service
 from apps.tasks.models import Task
 from apps.tasks.services import create_automation_task
@@ -60,6 +62,8 @@ def run_conversation_pipeline(
     qualification_override: ConversationQualification | None = None,
     ai_log_id_override: int | None = None,
     source: str = "api",
+    confirmed_actions: list[str] | tuple[str, ...] = (),
+    expected_preview_id: str | None = None,
 ) -> ConversationPipelineResult:
     """Promote an inbox conversation into CRM entities.
 
@@ -74,6 +78,13 @@ def run_conversation_pipeline(
         assert_resource_enabled(conversation.business, Resources.DEALS)
     if create_task:
         assert_resource_enabled(conversation.business, Resources.TASKS)
+
+    requested = {name for name, enabled in (("create_lead", create_lead), ("create_deal", create_deal), ("create_task", create_task)) if enabled}
+    if requested:
+        if not actor or not getattr(actor, "is_authenticated", False):
+            raise PermissionDenied("CRM actions require staff confirmation.")
+        if requested != set(confirmed_actions):
+            raise ValidationError({"confirmed_actions": "Confirm exactly the selected CRM actions."})
 
     qualification = qualification_override
     ai_log = None
@@ -98,6 +109,20 @@ def run_conversation_pipeline(
             .select_related("business", "client", "lead", "deal", "assigned_to")
             .get(pk=conversation.pk)
         )
+        for related in (conversation.client, conversation.lead, conversation.deal):
+            if related is not None and related.business_id != conversation.business_id:
+                raise ValidationError("Conversation relationships must belong to the same business.")
+        if requested:
+            assert_can(actor, conversation.business, Resources.CONVERSATIONS, Actions.UPDATE, obj=conversation)
+            assert_can(actor, conversation.business, Resources.CLIENTS, Actions.CREATE)
+            for action, resource in (("create_lead", Resources.LEADS), ("create_deal", Resources.DEALS), ("create_task", Resources.TASKS)):
+                if action in requested:
+                    assert_can(actor, conversation.business, resource, Actions.CREATE)
+            if expected_preview_id is not None:
+                from apps.conversations.inbox_helpers import qualification_preview_for_execution
+                preview = qualification_preview_for_execution(conversation)
+                if preview.get("qualified_at") != expected_preview_id:
+                    raise ValidationError({"preview_id": "AI proposal changed. Review it again before confirming."})
         created = {"client": False, "lead": False, "deal": False, "task": False}
         client = _ensure_client(conversation=conversation, created=created, actor=actor, source=source, qualification=qualification)
         lead = _ensure_lead(
@@ -149,6 +174,7 @@ def run_conversation_pipeline(
                 "ai_log_id": ai_log_id,
                 "last_run_at": timezone.now().isoformat(),
                 "last_run_by": actor.id if actor and getattr(actor, "is_authenticated", False) else None,
+                "confirmed_actions": sorted(requested),
             }
         )
         metadata[PIPELINE_META_KEY] = pipeline_meta
@@ -160,6 +186,13 @@ def run_conversation_pipeline(
             conversation.deal = deal
         conversation.metadata_json = metadata
         conversation.save(update_fields=["client", "lead", "deal", "metadata_json", "updated_at"])
+        if requested and any(created.values()):
+            write_actor_audit_log(
+                actor=actor, action=AuditLog.Actions.UPDATE, instance=conversation,
+                business=conversation.business,
+                metadata={"kind": "conversation_pipeline_confirmed", "confirmed_actions": sorted(requested),
+                          "preview_id": expected_preview_id, "created": created, "ai_log_id": ai_log_id},
+            )
 
     return ConversationPipelineResult(
         conversation=conversation,
@@ -266,6 +299,12 @@ def _ensure_lead(
         },
     )
     created["lead"] = True
+    if conversation.channel == BotConversation.Channels.WEBSITE:
+        record_lead_captured_event(
+            lead=lead, client=client, provider=BotConversation.Channels.WEBSITE,
+            external_id=f"website-conversation:{conversation.id}:lead:{lead.id}",
+            payload={"conversation_id": conversation.id, "source": "website_chat", "confirmed_by": actor.id},
+        )
     create_activity_event(
         business=conversation.business,
         instance=lead,

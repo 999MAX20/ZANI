@@ -2551,9 +2551,8 @@ export const en: Record<string, string> = {
   "conversations.dealCreatedShort": "Deal created.",
   "conversations.taskCreatedShort": "Task created.",
   "conversations.pipelineAiSuffix": " Hint: {intent}, {confidence}%.",
-  "conversations.pipelineUpdated": "Client links updated: {created}.{ai}",
-  "conversations.pipelineAlreadyLinked":
-    "Conversation is already linked to a client and deal.{ai}",
+  "conversations.pipelineUpdated": "Created: {created}.{ai}",
+  "conversations.pipelineAlreadyLinked": "The selected actions have already been completed.{ai}",
   "conversations.bulkDone": "Done: processed {count} conversations.",
   "conversations.pipelineDealTitle": "Deal: {title}",
   "conversations.attention": "Attention",
@@ -3652,27 +3651,24 @@ export const en: Record<string, string> = {
   "aiAgents.control.privacyText":
     "The agent does not show service fields or internal notes to clients.",
   "aiAgents.control.pipelineTitle": "Requests and manager handoff",
-  "aiAgents.control.pipelineText":
-    "Choose what the agent may do after a dialog: qualify a client, create a lead, assign a task or prepare a deal.",
+  "aiAgents.control.pipelineText": "Choose which proposals the agent prepares for staff confirmation.",
   "aiAgents.control.mode": "What to do after a dialog",
   "aiAgents.control.mode.off": "Off",
   "aiAgents.control.mode.triage": "Only evaluate the request",
-  "aiAgents.control.mode.leadTask": "Create lead and task",
-  "aiAgents.control.mode.draftDeal": "Prepare draft deal",
+  "aiAgents.control.mode.leadTask": "Suggest lead and task",
+  "aiAgents.control.mode.draftDeal": "Suggest draft deal",
   "aiAgents.control.maxReplyChars": "Maximum auto-reply length",
   "aiAgents.control.leadConfidence":
-    "How sure the agent must be to create a lead: {value}",
+    "Minimum confidence for a lead proposal: {value}",
   "aiAgents.control.dealConfidence":
-    "How sure the agent must be to prepare a deal: {value}",
+    "Minimum confidence for a draft deal proposal: {value}",
   "aiAgents.control.advancedTitle": "Advanced limits",
-  "aiAgents.control.advancedText":
-    "Usually you do not need to change these. Use them if the agent creates too many leads or writes replies that are too long.",
+  "aiAgents.control.advancedText": "Proposal confidence and reply length settings.",
   "aiAgents.control.reviewFallbackTitle": "Review uncertain decisions",
   "aiAgents.control.reviewFallbackText":
     "If AI used fallback or is not confident, the dialog stays for manager review.",
-  "aiAgents.control.appointmentTitle": "Create appointment",
-  "aiAgents.control.appointmentText":
-    "The agent can create an appointment only from a confirmed available slot.",
+  "aiAgents.control.appointmentTitle": "Collect booking preferences",
+  "aiAgents.control.appointmentText": "The agent asks about a time; staff creates the appointment.",
   "aiAgents.control.autoReplyTitle": "Send reply automatically",
   "aiAgents.control.autoReplyText":
     "The reply is sent to the client only after the auto pipeline passes its guards.",
@@ -3682,8 +3678,8 @@ export const en: Record<string, string> = {
   "aiAgents.functions.taskTitle": "Create task",
   "aiAgents.functions.taskText":
     "The agent can suggest a manager task after a conversation.",
-  "aiAgents.functions.dealTitle": "Update deal",
-  "aiAgents.functions.dealText": "The agent can suggest the next deal status.",
+  "aiAgents.functions.dealTitle": "Suggest draft deal",
+  "aiAgents.functions.dealText": "Staff reviews the proposal and confirms draft creation.",
   "aiAgents.functions.managerTitle": "Pass to manager",
   "aiAgents.functions.managerText":
     "The agent can stop the flow and pass the dialog to a person.",
@@ -3825,12 +3821,10 @@ export const en: Record<string, string> = {
     "Choose the balance of quality and speed. Start with fast or quality mode and avoid frequent changes.",
   "aiAgents.hint.temperature":
     "Higher values make wording freer. For sales we recommend 0.3-0.5 for stable replies.",
-  "aiAgents.hint.pipelineMode":
-    "Mode defines what the agent does with the dialog in CRM. Start safely with Lead and task.",
+  "aiAgents.hint.pipelineMode": "Leads, tasks and draft deals are created after staff confirms the selected actions.",
   "aiAgents.hint.maxReplyChars":
     "Limits auto-reply length. Recommendation: 500-900 characters for a concise client reply.",
-  "aiAgents.hint.leadConfidence":
-    "Minimum confidence for creating a lead. Higher threshold means fewer automatic mistakes.",
+  "aiAgents.hint.leadConfidence": "Minimum confidence for proposing a lead to staff.",
   "aiAgents.hint.dealConfidence":
     "Minimum confidence for a draft deal. Recommendation: keep it higher than the lead threshold.",
   "aiAgents.hint.launchReady":
@@ -3839,8 +3833,7 @@ export const en: Record<string, string> = {
     "Before launch, add knowledge and connect at least one active channel.",
   "aiAgents.hint.tool.create_lead":
     "Enable almost always: a lead captures client interest and prevents lost requests.",
-  "aiAgents.hint.tool.create_task":
-    "Useful for the team: the agent creates a manager task after an important dialog.",
+  "aiAgents.hint.tool.create_task": "The agent suggests a task; staff confirms its creation.",
   "aiAgents.hint.tool.create_deal":
     "Enable when sales stages are clear and the agent was tested on real questions.",
   "aiAgents.hint.tool.handoff_to_manager":
@@ -5656,16 +5649,28 @@ export const en: Record<string, string> = {
   "integrations.page.merchantResultsMeta": "Found: {found} of {total}.",
   "integrations.page.attentionTitle": "Needs attention",
   "integrations.page.attentionText": "Connections with an error or incomplete setup.",
+  "conversations.pipelineCreated.client": "client record",
+  "conversations.pipelineCreated.lead": "lead",
+  "conversations.pipelineCreated.task": "task",
+  "conversations.pipelineCreated.deal": "draft deal",
+  "conversations.confirmPipelineTitle": "Confirm AI actions",
+  "conversations.confirmPipelineActions": "Select actions for this request",
+  "conversations.confirmPipeline.create_lead": "Create lead",
+  "conversations.confirmPipeline.create_task": "Create task",
+  "conversations.confirmPipeline.create_deal": "Create draft deal",
+  "conversations.confirmPipelineSubmit": "Confirm and execute",
+  "aiAgents.authority.staffConfirmation": "After staff confirmation",
+  "aiAgents.authority.staffBooking": "Staff creates the appointment",
   "aiAgents.authority.title": "Agent authority",
   "aiAgents.authority.text": "Effective execution mode after settings and allowed functions are applied.",
   "aiAgents.authority.suggestions": "Replies and qualification",
-  "aiAgents.authority.leadTask": "Client, lead and task",
+  "aiAgents.authority.leadTask": "Lead and task",
   "aiAgents.authority.draftDeal": "Draft deal",
   "aiAgents.authority.appointment": "Client appointment",
   "aiAgents.authority.suggestOnly": "Suggestion only",
   "aiAgents.authority.autonomous": "Autonomous",
   "aiAgents.authority.autonomousDraft": "Autonomous, draft only",
-  "aiAgents.authority.explicitApproval": "Only after client selects a slot",
+  "aiAgents.authority.explicitApproval": "Staff creates the appointment",
   "aiAgents.authority.off": "Off",
   "crmCard.closeInspector": "Close context panel",
   "crmCard.openInspector": "Open context panel",

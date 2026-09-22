@@ -260,10 +260,10 @@ def qualification_preview_for_execution(conversation):
     metadata = conversation.metadata_json or {}
     preview_payload = metadata.get(QUALIFICATION_PREVIEW_META_KEY)
     if not isinstance(preview_payload, dict):
-        raise ValidationError({"detail": "Run AI qualification preview before CRM pipeline execution."})
+        raise ValidationError({"preview_id": "Run AI qualification preview before CRM pipeline execution."})
     qualification_payload = preview_payload.get("qualification")
     if not isinstance(qualification_payload, dict):
-        raise ValidationError({"detail": "Run AI qualification preview before CRM pipeline execution."})
+        raise ValidationError({"preview_id": "Run AI qualification preview before CRM pipeline execution."})
     if preview_payload.get("last_message_id") != last_message_id(conversation):
-        raise ValidationError({"detail": "AI qualification preview is stale. Run preview again before CRM pipeline execution."})
+        raise ValidationError({"preview_id": "AI qualification preview is stale. Run preview again before CRM pipeline execution."})
     return preview_payload

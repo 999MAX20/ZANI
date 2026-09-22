@@ -361,13 +361,17 @@ class InboxConversationViewSet(ReadOnlyModelViewSet):
         assert_can(request.user, conversation.business, Resources.CONVERSATIONS, Actions.UPDATE, obj=conversation)
         assert_can(request.user, conversation.business, Resources.AI_PIPELINE, Actions.SUGGEST, obj=conversation)
 
+        input_message_id = last_message_id(conversation)
         qualification, ai_log = qualify_conversation(conversation=conversation, user=request.user)
+        conversation.refresh_from_db()
+        if input_message_id != last_message_id(conversation):
+            raise ValidationError({"preview_id": "New messages arrived during qualification. Review the conversation again."})
         preview_payload = {
             "qualification": qualification.to_dict(),
             "ai_log_id": ai_log.id if ai_log else None,
             "qualified_at": timezone.now().isoformat(),
             "qualified_by": request.user.id if request.user and request.user.is_authenticated else None,
-            "last_message_id": last_message_id(conversation),
+            "last_message_id": input_message_id,
         }
         metadata = dict(conversation.metadata_json or {})
         metadata[QUALIFICATION_PREVIEW_META_KEY] = preview_payload
@@ -438,6 +442,8 @@ class InboxConversationViewSet(ReadOnlyModelViewSet):
             apply_ai_decisions=data.get("apply_ai_decisions", True),
             qualification_override=qualification_override,
             ai_log_id_override=ai_log_id_override,
+            confirmed_actions=data["confirmed_actions"],
+            expected_preview_id=data.get("preview_id") if data.get("use_ai_qualification", True) else None,
         )
         return Response(
             {
@@ -565,6 +571,7 @@ class InboxConversationViewSet(ReadOnlyModelViewSet):
             create_task=False,
             lead_message=serializer.validated_data.get("message", ""),
             use_ai_qualification=False,
+            confirmed_actions=["create_lead"],
         )
         return Response(LeadSerializer(result.lead).data, status=status.HTTP_201_CREATED)
 
@@ -619,5 +626,6 @@ class InboxConversationViewSet(ReadOnlyModelViewSet):
             deal_amount=serializer.validated_data.get("amount", 0),
             deal_currency=serializer.validated_data.get("currency") or "KZT",
             use_ai_qualification=False,
+            confirmed_actions=["create_lead", "create_deal"],
         )
         return Response(DealSerializer(result.deal).data, status=status.HTTP_201_CREATED)

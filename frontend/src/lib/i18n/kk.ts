@@ -2563,10 +2563,8 @@ export const kk: Record<string, string> = {
   "conversations.dealCreatedShort": "Мәміле жасалды.",
   "conversations.taskCreatedShort": "Тапсырма жасалды.",
   "conversations.pipelineAiSuffix": " Кеңес: {intent}, {confidence}%.",
-  "conversations.pipelineUpdated":
-    "Клиентпен байланыстар жаңартылды: {created}.{ai}",
-  "conversations.pipelineAlreadyLinked":
-    "Диалог клиентпен және мәмілемен байланысқан.{ai}",
+  "conversations.pipelineUpdated": "Жасалды: {created}.{ai}",
+  "conversations.pipelineAlreadyLinked": "Таңдалған әрекеттер орындалған.{ai}",
   "conversations.bulkDone": "Дайын: {count} диалог өңделді.",
   "conversations.pipelineDealTitle": "Мәміле: {title}",
   "conversations.attention": "Назар",
@@ -3635,27 +3633,24 @@ export const kk: Record<string, string> = {
   "aiAgents.control.privacyText":
     "Агент клиентке қызметтік өрістер мен ішкі жазбаларды көрсетпейді.",
   "aiAgents.control.pipelineTitle": "Өтінімдер және менеджерге беру",
-  "aiAgents.control.pipelineText":
-    "Диалогтан кейін агент не істей алатынын таңдаңыз: клиентті бағалау, өтінім жасау, тапсырма қою немесе мәміле дайындау.",
+  "aiAgents.control.pipelineText": "Агент қызметкердің растауына қандай ұсыныстар дайындайтынын таңдаңыз.",
   "aiAgents.control.mode": "Диалогтан кейін не істеу керек",
   "aiAgents.control.mode.off": "Өшірулі",
   "aiAgents.control.mode.triage": "Тек өтінішті бағалау",
-  "aiAgents.control.mode.leadTask": "Өтінім және тапсырма жасау",
-  "aiAgents.control.mode.draftDeal": "Мәміле черновигін дайындау",
+  "aiAgents.control.mode.leadTask": "Өтінім мен тапсырма ұсыну",
+  "aiAgents.control.mode.draftDeal": "Мәміле жобасын ұсыну",
   "aiAgents.control.maxReplyChars": "Автожауаптың ең көп ұзындығы",
   "aiAgents.control.leadConfidence":
-    "Өтінім жасау үшін агент қаншалықты сенімді болуы керек: {value}",
+    "Өтінім ұсынысына қажетті сенімділік: {value}",
   "aiAgents.control.dealConfidence":
-    "Мәміле дайындау үшін агент қаншалықты сенімді болуы керек: {value}",
+    "Мәміле жобасын ұсынуға қажетті сенімділік: {value}",
   "aiAgents.control.advancedTitle": "Кеңейтілген шектеулер",
-  "aiAgents.control.advancedText":
-    "Әдетте өзгертудің қажеті жоқ. Агент тым көп өтінім жасаса немесе тым ұзақ жауап жазса қолданыңыз.",
+  "aiAgents.control.advancedText": "Ұсыныс сенімділігі мен жауап ұзындығының баптаулары.",
   "aiAgents.control.reviewFallbackTitle": "Сенімсіз шешімдерді тексеру",
   "aiAgents.control.reviewFallbackText":
     "AI fallback қолданса немесе сенімсіз болса, диалог менеджер тексеруінде қалады.",
-  "aiAgents.control.appointmentTitle": "Жазба жасау",
-  "aiAgents.control.appointmentText":
-    "Агент тек расталған бос слоттан жазба жасай алады.",
+  "aiAgents.control.appointmentTitle": "Қабылдау тілектерін жинау",
+  "aiAgents.control.appointmentText": "Агент уақытты нақтылайды; қабылдауға қызметкер жазады.",
   "aiAgents.control.autoReplyTitle": "Жауапты автоматты жіберу",
   "aiAgents.control.autoReplyText":
     "Жауап клиентке автопайплайн шектеулерінен өткеннен кейін ғана жіберіледі.",
@@ -3664,8 +3659,8 @@ export const kk: Record<string, string> = {
   "aiAgents.functions.taskTitle": "Тапсырма жасау",
   "aiAgents.functions.taskText":
     "Агент сөйлесуден кейін менеджерге тапсырма ұсына алады.",
-  "aiAgents.functions.dealTitle": "Мәмілені жаңарту",
-  "aiAgents.functions.dealText": "Агент мәміленің келесі статусын ұсына алады.",
+  "aiAgents.functions.dealTitle": "Мәміле жобасын ұсыну",
+  "aiAgents.functions.dealText": "Қызметкер ұсынысты қарап, жобаны жасауды растайды.",
   "aiAgents.functions.managerTitle": "Менеджерге беру",
   "aiAgents.functions.managerText":
     "Агент сценарийді тоқтатып, диалогты адамға бере алады.",
@@ -3806,12 +3801,10 @@ export const kk: Record<string, string> = {
     "Сапа мен жылдамдық балансын таңдаңыз. Бастау үшін жылдам немесе сапалы режим жеткілікті.",
   "aiAgents.hint.temperature":
     "Мән жоғары болса, жауап еркінірек болады. Сатылым үшін тұрақты жауапқа 0.3-0.5 ұсынамыз.",
-  "aiAgents.hint.pipelineMode":
-    "Режим агент CRM-де диалогпен не істейтінін анықтайды. Бастау үшін «Өтінім және тапсырма» қауіпсіз.",
+  "aiAgents.hint.pipelineMode": "Өтінім, тапсырма және мәміле жобасы қызметкер таңдаған әрекеттерді растағаннан кейін жасалады.",
   "aiAgents.hint.maxReplyChars":
     "Автожауап ұзындығын шектейді. Ұсыныс: клиентке қысқа жауап үшін 500-900 таңба.",
-  "aiAgents.hint.leadConfidence":
-    "Өтінім жасауға ең төмен сенімділік. Шек жоғары болса, автоматты қателер азаяды.",
+  "aiAgents.hint.leadConfidence": "Қызметкерге өтінім ұсынуға қажетті ең төменгі сенімділік.",
   "aiAgents.hint.dealConfidence":
     "Мәміле черновигіне ең төмен сенімділік. Ұсыныс: өтінім шегінен жоғары ұстаңыз.",
   "aiAgents.hint.launchReady":
@@ -3820,8 +3813,7 @@ export const kk: Record<string, string> = {
     "Іске қоспас бұрын білім қосып, кемінде бір белсенді арнаны қосыңыз.",
   "aiAgents.hint.tool.create_lead":
     "Әдетте қосулы болсын: өтінім клиент қызығушылығын бекітеді.",
-  "aiAgents.hint.tool.create_task":
-    "Командаға пайдалы: маңызды диалогтан кейін менеджерге тапсырма жасайды.",
+  "aiAgents.hint.tool.create_task": "Агент тапсырма ұсынады; оны жасауды қызметкер растайды.",
   "aiAgents.hint.tool.create_deal":
     "Сату кезеңдері түсінікті және агент нақты сұрақтарда тексерілгенде қосыңыз.",
   "aiAgents.hint.tool.handoff_to_manager":
@@ -5689,16 +5681,28 @@ export const kk: Record<string, string> = {
   "integrations.page.merchantResultsMeta": "Табылды: {found} / {total}.",
   "integrations.page.attentionTitle": "Назар аударуды қажет етеді",
   "integrations.page.attentionText": "Қатесі бар немесе баптауы аяқталмаған қосылымдар.",
+  "conversations.pipelineCreated.client": "клиент картасы",
+  "conversations.pipelineCreated.lead": "өтінім",
+  "conversations.pipelineCreated.task": "тапсырма",
+  "conversations.pipelineCreated.deal": "мәміле жобасы",
+  "conversations.confirmPipelineTitle": "ЖИ әрекеттерін растау",
+  "conversations.confirmPipelineActions": "Осы өтінішке арналған әрекеттерді таңдаңыз",
+  "conversations.confirmPipeline.create_lead": "Өтінім жасау",
+  "conversations.confirmPipeline.create_task": "Тапсырма жасау",
+  "conversations.confirmPipeline.create_deal": "Мәміле жобасын жасау",
+  "conversations.confirmPipelineSubmit": "Растау және орындау",
+  "aiAgents.authority.staffConfirmation": "Қызметкер растағаннан кейін",
+  "aiAgents.authority.staffBooking": "Қабылдауға қызметкер жазады",
   "aiAgents.authority.title": "Агент өкілеттіктері",
   "aiAgents.authority.text": "Баптаулар мен рұқсат етілген функцияларды ескеретін нақты орындау режимі.",
   "aiAgents.authority.suggestions": "Жауаптар мен біліктілік",
-  "aiAgents.authority.leadTask": "Клиент, өтінім және тапсырма",
+  "aiAgents.authority.leadTask": "Өтінім және тапсырма",
   "aiAgents.authority.draftDeal": "Мәміле жобасы",
   "aiAgents.authority.appointment": "Клиент жазбасы",
   "aiAgents.authority.suggestOnly": "Тек ұсыныс",
   "aiAgents.authority.autonomous": "Автоматты түрде",
   "aiAgents.authority.autonomousDraft": "Автоматты, тек жоба",
-  "aiAgents.authority.explicitApproval": "Клиент уақытты таңдағаннан кейін",
+  "aiAgents.authority.explicitApproval": "Қабылдауға қызметкер жазады",
   "aiAgents.authority.off": "Өшірулі",
   "crmCard.closeInspector": "Контекст панелін жабу",
   "crmCard.openInspector": "Контекст панелін ашу",

@@ -43,6 +43,8 @@ import {
   type InboxFilters,
   type InboxMessage,
   type PaginatedInboxMessageResponse,
+  type PipelineAction,
+  type PipelineConfirmation,
 } from "../../api/inbox";
 import { useActionFeedback } from "../../components/actions/useActionFeedback";
 import { usePageHeader } from "../../components/layout/PageHeaderContext";
@@ -68,6 +70,7 @@ import { ConversationListPane } from "./components/ConversationListPane";
 import { Pill } from "./components/ConversationPrimitives";
 import { ConversationThreadPane } from "./components/ConversationThreadPane";
 import { MessageDeliveryDetails } from "./components/MessageDeliveryDetails";
+import { PipelineConfirmationDialog, type PipelineReview } from "./components/PipelineConfirmationDialog";
 import {
   channelOptions,
   CONVERSATIONS_SHELL_OFFSET,
@@ -141,6 +144,7 @@ export function ConversationsPage() {
   const draftHydratingRef = useRef(false);
   const sendIdempotencyRef = useRef<{ conversationId: number; text: string; key: string } | null>(null);
   const [quickRepliesOpen, setQuickRepliesOpen] = useState(false);
+  const [pipelineReview, setPipelineReview] = useState<PipelineReview | null>(null);
   const [quickReplySearch, setQuickReplySearch] = useState("");
   const [crmLinkModal, setCrmLinkModal] = useState<
     "client" | "lead" | "deal" | null
@@ -1027,7 +1031,7 @@ export function ConversationsPage() {
   });
 
   const runPipelineMutation = useMutation({
-    mutationFn: (payload: { conversationId: number; dealTitle?: string }) => {
+    mutationFn: (payload: PipelineConfirmation) => {
       if (!canRunAiPipeline)
         throw new Error(t("conversations.aiPipelineRunForbidden"));
       return inboxApi.runPipeline(payload);
@@ -1035,7 +1039,7 @@ export function ConversationsPage() {
     onSuccess: async (result) => {
       const created = Object.entries(result.created)
         .filter(([, value]) => value)
-        .map(([key]) => key)
+        .map(([key]) => t(`conversations.pipelineCreated.${key}`))
         .join(", ");
       const aiSuffix = result.qualification
         ? t("conversations.pipelineAiSuffix", {
@@ -1048,6 +1052,7 @@ export function ConversationsPage() {
           ? t("conversations.pipelineUpdated", { created, ai: aiSuffix })
           : t("conversations.pipelineAlreadyLinked", { ai: aiSuffix }),
       );
+      setPipelineReview(null);
       await Promise.all([
         invalidateInbox(),
         queryClient.invalidateQueries({ queryKey: ["clients"] }),
@@ -1225,20 +1230,25 @@ export function ConversationsPage() {
 
   function runSelectedPipeline() {
     if (!selected) return;
-    if (!selectedInsight) {
+    if (!selectedInsight?.previewId) {
       previewSelectedPipeline();
       return;
     }
-    runPipelineMutation.mutate({
+    runPipelineMutation.reset();
+    setPipelineReview({
       conversationId: selected.id,
-      dealTitle: t("conversations.pipelineDealTitle", {
-        title: conversationTitle(selected, t),
-      }),
+      previewId: selectedInsight.previewId,
+      summary: selectedInsight.summary,
+      proposedActions: selectedInsight.proposedActions,
     });
   }
 
   const selectedInsight = selected ? getAutoPipelineInsight(selected) : null;
   const canApplyPipeline = canRunAiPipeline && Boolean(selectedInsight);
+  const pipelineAllowedActions: PipelineAction[] = ([
+    ["create_lead", "leads"], ["create_task", "tasks"], ["create_deal", "deals"],
+  ] as const).filter(([, resource]) => hasPermission(user, business?.id, resource, "create"))
+    .map(([action]) => action);
   const messageList = useMemo(() => {
     if (!messages.data) return [];
     return [...messages.data.pages].reverse().flatMap((page) => page.results);
@@ -1371,6 +1381,14 @@ export function ConversationsPage() {
         />
 
         <ConversationThreadPane
+          mobileActions={selected ? <>
+            <Button variant="ai" onClick={previewSelectedPipeline} disabled={!canSuggestAiPipeline} isLoading={qualifyMutation.isPending}>
+              {t("conversations.previewQualification")}
+            </Button>
+            <Button variant="secondary" onClick={runSelectedPipeline} disabled={!canApplyPipeline} isLoading={runPipelineMutation.isPending}>
+              {t("conversations.confirmPipelineTitle")}
+            </Button>
+          </> : null}
           selected={selected}
           mobileThreadOpen={mobileThreadOpen}
           onMobileClose={() => setMobileThreadOpen(false)}
@@ -1853,7 +1871,7 @@ export function ConversationsPage() {
                           : undefined
                     }
                   >
-                    <Link2 size={16} /> {t("conversations.updateLinks")}
+                    <Link2 size={16} /> {t("conversations.confirmPipelineTitle")}
                   </Button>
                 </div>
               </section>
@@ -1865,6 +1883,11 @@ export function ConversationsPage() {
           )}
         </aside>
       </WorkQueueLayout>
+
+      {pipelineReview ? <PipelineConfirmationDialog key={`${pipelineReview.conversationId}:${pipelineReview.previewId}`}
+        review={pipelineReview} allowedActions={pipelineAllowedActions} pending={runPipelineMutation.isPending}
+        error={runPipelineMutation.error ? getApiErrorMessage(runPipelineMutation.error) : null}
+        onClose={() => setPipelineReview(null)} onConfirm={(confirmation) => runPipelineMutation.mutate(confirmation)} /> : null}
 
       <Dialog
         title={t("conversations.quickRepliesTitle")}

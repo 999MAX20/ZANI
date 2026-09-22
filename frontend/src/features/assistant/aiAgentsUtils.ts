@@ -72,9 +72,11 @@ export function autoPipelineFromSettings(settings: Record<string, unknown>) {
   const raw = settings.auto_crm_pipeline && typeof settings.auto_crm_pipeline === "object"
     ? settings.auto_crm_pipeline as Record<string, unknown>
     : {};
-  const mode = typeof raw.mode === "string" && ["off", "triage", "lead_task", "draft_deal"].includes(raw.mode)
+  const legacyModes: Record<string, AutoPipelineMode> = { suggest_only: "triage", auto_lead_task: "lead_task", draft_deal: "draft_deal", appointment_explicit: "lead_task" };
+  const legacyMode = typeof raw.confirmation_mode === "string" ? legacyModes[raw.confirmation_mode] : undefined;
+  const mode = legacyMode || (typeof raw.mode === "string" && ["off", "triage", "lead_task", "draft_deal"].includes(raw.mode)
     ? raw.mode as AutoPipelineMode
-    : "off";
+    : "off");
   return {
     enabled: Boolean(raw.enabled ?? mode !== "off"),
     mode,

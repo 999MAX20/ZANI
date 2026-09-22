@@ -126,6 +126,13 @@ export type InboxQualificationResult = {
   last_message_id: Id | null;
 };
 
+export type PipelineAction = "create_lead" | "create_deal" | "create_task";
+export type PipelineConfirmation = {
+  conversationId: Id;
+  previewId: string;
+  actions: PipelineAction[];
+};
+
 function cleanParams(filters: InboxFilters) {
   return Object.fromEntries(Object.entries(filters).filter(([, value]) => value !== undefined && value !== ""));
 }
@@ -267,15 +274,15 @@ export const inboxApi = {
     const { data } = await apiClient.post<Deal>(`/api/inbox/conversations/${conversationId}/create-deal/`, { title });
     return data;
   },
-  runPipeline: async ({ conversationId, dealTitle }: { conversationId: Id; dealTitle?: string }) => {
+  runPipeline: async ({ conversationId, previewId, actions }: PipelineConfirmation) => {
     const { data } = await apiClient.post<InboxPipelineResult>(`/api/inbox/conversations/${conversationId}/run-pipeline/`, {
-      create_lead: true,
-      create_deal: true,
-      create_task: true,
+      create_lead: actions.includes("create_lead"),
+      create_deal: actions.includes("create_deal"),
+      create_task: actions.includes("create_task"),
+      confirmed_actions: actions,
+      preview_id: previewId,
       use_ai_qualification: true,
-      apply_ai_decisions: true,
-      deal_title: dealTitle,
-      task_title: dealTitle ? `Next step: ${dealTitle}` : undefined,
+      apply_ai_decisions: false,
       task_priority: "normal",
     });
     return data;

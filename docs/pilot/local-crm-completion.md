@@ -201,6 +201,13 @@ replay и оба входа проверены с isolated API, финансов
 
 ### 5. Три направления ИИ
 
+2026-09-22: начат ограниченный пакет V1-A03–A09 по единому подтверждению
+AI-действий, включая выявленное автоматическое создание Lead из website chat
+контакта до запуска ИИ. Текущий candidate меняет эти режимы на предложения и
+добавляет явный выбор/подтверждение в Inbox; источник точного статуса —
+[primary checkpoint](../testing/task-state/PRIMARY-SESSION.md). Этот пакет не
+закрывает качество трёх AI-направлений, live provider или подключение каналов.
+
 **Есть:** [assistant/context](../../apps/ai_core/assistant.py),
 [analyst](../../apps/ai_core/analyst.py), [tool registry](../../apps/ai_core/tool_registry.py),
 [provider adapters](../../apps/ai_core/providers/registry.py), bot readiness/lifecycle,

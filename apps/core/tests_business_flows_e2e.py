@@ -408,7 +408,9 @@ class CrmBusinessFlowE2ETests(TestCase):
         preview_response = self.api.post(f"/api/inbox/conversations/{conversation.id}/qualify/", format="json")
         run_response = self.api.post(
             f"/api/inbox/conversations/{conversation.id}/run-pipeline/",
-            {"deal_title": "Inbox pipeline deal", "create_task": True},
+            {"deal_title": "Inbox pipeline deal", "create_task": True,
+             "confirmed_actions": ["create_lead", "create_deal", "create_task"],
+             "preview_id": preview_response.data["qualified_at"]},
             format="json",
         )
 

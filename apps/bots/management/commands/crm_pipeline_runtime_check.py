@@ -125,7 +125,7 @@ class Command(BaseCommand):
         BusinessKnowledgeItem.objects.create(
             business=business,
             title="CRM runtime check knowledge",
-            content="Offer only configured services and available slots; booking needs explicit client selection.",
+            content="Offer only configured services and available slots; CRM work needs staff confirmation and staff creates appointments.",
         )
         channel = BotChannel.objects.create(
             bot=bot,
@@ -172,6 +172,13 @@ class Command(BaseCommand):
                                 and conversation.metadata_json.get("auto_booking", {}).get("status") == "requires_staff",
                                 "No automatic booking after client reply"))
         api.force_authenticate(owner)
+        preview = api.post(f"/api/inbox/conversations/{conversation.id}/qualify/", format="json")
+        confirmed = api.post(f"/api/inbox/conversations/{conversation.id}/run-pipeline/", {
+            "confirmed_actions": ["create_lead", "create_deal", "create_task"],
+            "preview_id": preview.data.get("qualified_at"),
+        }, format="json")
+        steps.append(self._step("staff confirms CRM actions", confirmed.status_code == 200, f"status={confirmed.status_code}"))
+        conversation.refresh_from_db()
         chosen_slot = offered_slots[0] if offered_slots else {}
         booking = api.post(f"/api/inbox/conversations/{conversation.id}/create-appointment/", {
             "service_id": chosen_slot.get("service_id"), "resource_id": chosen_slot.get("resource_id"),

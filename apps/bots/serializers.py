@@ -14,7 +14,7 @@ from apps.outreach.models import OutreachCampaign
 from apps.outreach.services import record_explicit_consent
 from apps.integrations.sanitization import sanitize_config, sensitive_config_paths
 from apps.integrations.channel_boundary import validate_channel_public_write
-from apps.integrations.crm_mapping import record_lead_captured_event, record_message_received_event
+from apps.integrations.crm_mapping import record_message_received_event
 from apps.leads.models import Lead
 
 
@@ -315,12 +315,7 @@ class PublicWebsiteChatConversationCreateSerializer(serializers.Serializer):
                     note="Explicit website chat consent.",
                     evidence={"fields": {key: validated_data.get(key) for key in ["marketing_consent", "outreach_consent", "newsletter_consent", "whatsapp_consent"]}},
                 )
-            lead = Lead.objects.create(
-                business=business,
-                client=client,
-                source=Lead.Sources.WEBSITE,
-                message=message,
-            )
+            # A website conversation is intake, not staff confirmation of a Lead.
 
         conversation = BotConversation.objects.create(
             business=business,
@@ -346,14 +341,6 @@ class PublicWebsiteChatConversationCreateSerializer(serializers.Serializer):
         register_bot_message(bot_message)
         maybe_run_auto_pipeline(conversation=conversation, message=bot_message, channel=channel)
         conversation.refresh_from_db()
-        if conversation.lead_id:
-            record_lead_captured_event(
-                lead=conversation.lead,
-                client=conversation.client,
-                provider=BotConversation.Channels.WEBSITE,
-                external_id=f"website-chat:{bot_message.id}:lead:{conversation.lead_id}",
-                payload={"conversation_id": conversation.id, "message_id": bot_message.id, "source": "website_chat"},
-            )
         record_message_received_event(conversation=conversation, message=bot_message, provider=BotConversation.Channels.WEBSITE)
         return {"conversation": conversation, "message": bot_message, "client": client, "lead": lead}
 

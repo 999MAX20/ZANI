@@ -1,4 +1,4 @@
-import type { Ref } from "react";
+import type { ReactNode, Ref } from "react";
 import {
   CheckCheck,
   MessageSquare,
@@ -20,6 +20,7 @@ import { MessageBubble } from "./MessageBubble";
 type ConversationThreadPaneProps = {
   selected: InboxConversation | null;
   mobileThreadOpen: boolean;
+  mobileActions?: ReactNode;
   onMobileClose: () => void;
   messageScrollRef: Ref<HTMLDivElement>;
   messageEndRef: Ref<HTMLDivElement>;
@@ -49,6 +50,7 @@ type ConversationThreadPaneProps = {
 export function ConversationThreadPane({
   selected,
   mobileThreadOpen,
+  mobileActions,
   onMobileClose,
   messageScrollRef,
   messageEndRef,
@@ -93,6 +95,7 @@ export function ConversationThreadPane({
         </div>
       ) : (
         <>
+          {mobileActions ? <div className="flex flex-wrap gap-2 border-b border-zani-border p-3 xl:hidden">{mobileActions}</div> : null}
           <div className="border-b border-zani-border bg-zani-card px-4 py-3">
             <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
               <div className="min-w-0">

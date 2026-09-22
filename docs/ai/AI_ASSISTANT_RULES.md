@@ -10,6 +10,28 @@ neither a financial AI report nor live provider calls.
 
 This document defines what ZANI AI features may do, what they must not do, and how they should use business data.
 
+## V1 action confirmation — implementation candidate, 2026-09-22
+
+Legacy `auto_lead_task`, `draft_deal`, `appointment_explicit` and mode-based
+settings now propose CRM work. The automatic conversation pipeline may associate
+or create a client; it cannot create a Lead, Task or Deal. Website chat contact
+capture follows the same boundary, including when phone/email is supplied.
+The separate website lead form is outside this change.
+
+Inbox qualification is a read-only preview. The operator reviews its summary,
+selects individual lead/task/draft-deal actions and confirms them. `run-pipeline`
+requires `confirmed_actions` matching the requested creation flags and, when AI
+qualification is used, `preview_id` equal to the reviewed `qualified_at` value.
+Missing, replaced or stale previews cannot execute. The domain service rechecks
+the preview after locking the conversation, enforces actor and underlying
+permissions, and reuses previously linked results on replay. Existing assistant
+tool approvals remain a separate supported path with their existing audit rules.
+
+Appointment creation/rescheduling/cancellation and deal outcomes remain staff
+actions. Auto replies are independent of CRM writes and retain pause/handoff
+and fallback checks. No live provider or billing behavior is accepted here.
+Exact verification/publication: [primary checkpoint](../testing/task-state/PRIMARY-SESSION.md).
+
 ## Approved V1 policy — 2026-09-16
 
 [Owner-approved V1 rules](../product/V1_PRODUCT_RULES.md), section 6, control

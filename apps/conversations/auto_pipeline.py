@@ -81,37 +81,39 @@ def maybe_run_auto_pipeline(*, conversation: BotConversation, message: BotMessag
         return state_decision
     decision = _guard_auto_pipeline(config=config, conversation=conversation, message=message, qualification=qualification, ai_log_id=ai_log.id if ai_log else None)
     decision.confirmation_policy = _confirmation_policy(config)
-    if decision.status in {"qualified_only", "needs_review", "blocked_low_confidence", "blocked_risky_intent", "blocked_fallback"}:
+    if decision.status in {"needs_review", "blocked_low_confidence", "blocked_risky_intent", "blocked_fallback"}:
         _save_auto_pipeline_decision(conversation, message, config, decision)
         _write_decision_event(conversation, decision)
         return decision
 
     allowed_tools = _resolve_allowed_tools(conversation)
-    create_lead = "create_lead" in allowed_tools
-    create_task = "create_task" in allowed_tools
-    create_deal = decision.status == "created_draft_deal" and "create_deal" in allowed_tools
+    if decision.status == "qualified_only":
+        if _can_auto_reply(config=config, conversation=conversation, decision=decision):
+            _send_auto_reply(conversation=conversation, config=config, decision=decision)
+        _save_auto_pipeline_decision(conversation, message, config, decision)
+        _write_decision_event(conversation, decision)
+        return decision
+
+    create_lead = "create_lead" in allowed_tools and qualification.should_create_lead
+    create_task = "create_task" in allowed_tools and qualification.should_create_task
+    create_deal = decision.status == "proposed_draft_deal" and "create_deal" in allowed_tools and qualification.should_create_deal
     if create_deal and not resource_is_enabled(conversation.business, Resources.DEALS):
         create_deal = False
-        decision.status = "created_lead_task"
+        decision.status = "proposed_lead_task"
         decision.reason = "Deal creation is disabled for this business."
-        decision.confirmation_policy["allowed_auto_actions"] = [
-            action
-            for action in decision.confirmation_policy["allowed_auto_actions"]
-            if action != "create_draft_deal"
-        ]
-    elif decision.status == "created_draft_deal" and not create_deal:
-        decision.status = "created_lead_task"
+    elif decision.status == "proposed_draft_deal" and not create_deal:
+        decision.status = "proposed_lead_task"
         decision.reason = "Deal creation is disabled by the active agent profile."
-        decision.confirmation_policy["allowed_auto_actions"] = [
-            action
-            for action in decision.confirmation_policy["allowed_auto_actions"]
-            if action != "create_draft_deal"
-        ]
+    decision.confirmation_policy["requires_explicit_confirmation"] = [
+        action for action, enabled in (("create_lead", create_lead), ("create_task", create_task), ("create_draft_deal", create_deal)) if enabled
+    ]
+    # V1-A03 is the only automatic CRM write: associate/create the client.
+    # Lead, task and draft deal are proposals, even for persisted legacy modes.
     result = run_conversation_pipeline(
         conversation=conversation,
-        create_lead=create_lead,
-        create_deal=create_deal,
-        create_task=create_task,
+        create_lead=False,
+        create_deal=False,
+        create_task=False,
         use_ai_qualification=False,
         qualification_override=qualification,
         ai_log_id_override=ai_log.id if ai_log else None,
@@ -179,12 +181,12 @@ def _guard_auto_pipeline(
 
     if config.mode == "draft_deal":
         if qualification.intent not in config.allow_deal_intents:
-            return AutoPipelineDecision(status="created_lead_task", reason="Intent is not allowed for automatic deal creation.", qualification=qualification, ai_log_id=ai_log_id)
+            return AutoPipelineDecision(status="proposed_lead_task", reason="Intent is not allowed for a draft deal proposal.", qualification=qualification, ai_log_id=ai_log_id)
         if qualification.confidence < config.min_deal_confidence:
-            return AutoPipelineDecision(status="created_lead_task", reason="Confidence is below deal threshold; creating lead/task only.", qualification=qualification, ai_log_id=ai_log_id)
-        return AutoPipelineDecision(status="created_draft_deal", reason="Commercial high-confidence conversation can create a draft deal.", qualification=qualification, ai_log_id=ai_log_id)
+            return AutoPipelineDecision(status="proposed_lead_task", reason="Confidence is below deal threshold; proposing lead/task only.", qualification=qualification, ai_log_id=ai_log_id)
+        return AutoPipelineDecision(status="proposed_draft_deal", reason="Draft deal requires staff confirmation.", qualification=qualification, ai_log_id=ai_log_id)
 
-    return AutoPipelineDecision(status="created_lead_task", reason="Lead/task mode creates low-risk CRM work.", qualification=qualification, ai_log_id=ai_log_id)
+    return AutoPipelineDecision(status="proposed_lead_task", reason="Lead/task creation requires staff confirmation.", qualification=qualification, ai_log_id=ai_log_id)
 
 
 def _guard_conversation_state(conversation: BotConversation) -> AutoPipelineDecision | None:
@@ -246,7 +248,14 @@ def _can_auto_reply(*, config: AutoPipelineConfig, conversation: BotConversation
         return False
     if conversation_ai_block_reason(conversation):
         return False
-    if decision.status not in {"created_lead_task", "created_draft_deal", "qualified_only"}:
+    if decision.status not in {"proposed_lead_task", "proposed_draft_deal", "qualified_only"}:
+        return False
+    qualification = decision.qualification
+    if qualification and (
+        qualification.intent in {"spam", "support", "complaint"}
+        or (_is_fallback(qualification) and config.require_review_on_fallback)
+        or (qualification.requires_human_review and not _can_continue_with_review_flag(config, qualification))
+    ):
         return False
     return True
 
@@ -273,21 +282,12 @@ def _resolve_confirmation_mode(raw: dict[str, Any]) -> tuple[str, str]:
 
 
 def _confirmation_policy(config: AutoPipelineConfig) -> dict[str, Any]:
-    allowed_auto_actions: list[str] = []
-    requires_explicit_confirmation: list[str] = []
-    if config.confirmation_mode == CONFIRMATION_AUTO_LEAD_TASK:
-        allowed_auto_actions = ["create_client", "create_lead", "create_task"]
-    elif config.confirmation_mode == CONFIRMATION_DRAFT_DEAL:
-        allowed_auto_actions = ["create_client", "create_lead", "create_task", "create_draft_deal"]
-    elif config.confirmation_mode == CONFIRMATION_APPOINTMENT_EXPLICIT:
-        allowed_auto_actions = ["create_client", "create_lead", "create_task"]
-        requires_explicit_confirmation = ["create_appointment"]
-
     return {
-        "mode": config.confirmation_mode,
+        "mode": "staff_confirmation",
         "crm_mode": config.mode,
-        "allowed_auto_actions": allowed_auto_actions,
-        "requires_explicit_confirmation": requires_explicit_confirmation,
+        "allowed_auto_actions": ["create_client"] if config.mode in {"lead_task", "draft_deal"} else [],
+        "requires_explicit_confirmation": [],
+        "staff_only_actions": ["create_appointment", "reschedule_appointment", "cancel_appointment", "change_deal_result"],
         "appointment_confirmation_mode": config.appointment_confirmation_mode if config.create_appointment else "disabled",
     }
 
@@ -346,12 +346,10 @@ def _booking_meta(decision: AutoPipelineDecision) -> dict[str, Any] | None:
 
 
 def _notify_pipeline_result(*, result, decision: AutoPipelineDecision) -> None:
-    if not any(result.created.values()):
+    proposed = (decision.confirmation_policy or {}).get("requires_explicit_confirmation", [])
+    if not proposed or not result.created["client"]:
         return
-    created = [label for label, was_created in result.created.items() if was_created]
-    if not created:
-        return
-    text = f"AI CRM pipeline создал: {', '.join(created)}. Следующий шаг: {decision.qualification.next_action if decision.qualification else 'проверить диалог'}"
+    text = f"ИИ подготовил предложение для диалога. Требуется подтверждение сотрудника. Следующий шаг: {decision.qualification.next_action if decision.qualification else 'проверить диалог'}"
     create_role_notification(
         business=result.conversation.business,
         preferred_user=result.conversation.assigned_to or (result.lead.responsible_user if result.lead and result.lead.responsible_user_id else None),

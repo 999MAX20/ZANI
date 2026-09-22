@@ -2,6 +2,69 @@
 
 Дата: 2026-09-22. Это карточка исполнения, не продуктовый backlog.
 
+## V1-A03–A09 — единое подтверждение AI-действий, IN PROGRESS
+
+- Авторизация: «приступай» после разбора кода и предложения первым закрыть
+  единые правила действий ИИ. Mode implementation; gap code/policy conformity
+  and evidence. Источники: V1_PRODUCT_RULES §6, local-crm-completion §5.
+- Результат одной фазы: входящий диалог и ИИ не создают Lead/Task/Deal без
+  конкретного подтверждения уполномоченного сотрудника; рабочий UI позволяет
+  проверить предложение и выполнить ровно выбранные действия один раз.
+  Автоматическая карточка клиента допустима; запись/перенос/отмена и результат
+  сделки остаются действиями сотрудника. Автоответ и входящие сохраняются.
+- Owner primary `01a0c36e-33aa-7c72-be9b-72624dd2c739`, единственный writer;
+  canonical `C:\Users\user\Desktop\Zani`, branch `codex/ui-testing-toolkit`,
+  starting HEAD/base `8b41489f96f2c9d7a5cbc85bca560eae860e6ee9`, clean tracked,
+  staged and untracked snapshot. Registry idle; ветка и папка сохраняются.
+- Reuse: conversation pipeline/qualification/booking, существующий AI preview,
+  approval/tool execution/replay/audit, Inbox actions, agent settings/i18n.
+  Старые авто-режимы и tests закрепляют автоматическое создание — это явное
+  несоответствие утверждённому V1, а не переоткрытие ZD-009 или scheduling.
+- Scope: минимальные domain/API/UI изменения для этого контракта, regressions,
+  существующий runtime check и актуальные документы. Non-goals: качество LLM,
+  RAG, analyst rewrite, live AI/channels, billing, рабочая БД, кресла/рассылка,
+  политика closed/archive/spam и сторонние автоматизации/формы без AI.
+- Permissions/tenant: сохранять существующие права, проверять конкретные
+  действия и связанные сущности на backend; отказ без частичных записей.
+  Notifications: существующие employee review/result notifications, без новой
+  внешней рассылки. Activity/audit отражают предложение и подтверждённый результат;
+  BusinessEvent не расширять. AI: общая граница подтверждения всех затронутых путей.
+  Schema/env: миграции и настройки окружения не планируются, провайдеры отключены.
+- Acceptance: legacy settings не обходят подтверждение; разрешённый автоответ
+  продолжает работать; actionable UI preview → staff confirmation → CRM result;
+  отмена/отказ/устаревшее предложение/повтор/чужая компания покрыты; no automatic
+  appointment/deal outcome. Поддерживаемые RU/KK/EN согласованы.
+- Required checks: isolated focused regression, affected AI/bots/conversations
+  permission/lifecycle suites + check/drift; frontend i18n/type/build и targeted
+  desktop/mobile browser; полный `codex_verify.py --mode full --base-ref 8b41489f96f2c9d7a5cbc85bca560eae860e6ee9`
+  после candidate commit; normal push origin/main/readback и actual CI.
+- Delivery: reviewed conventional commit, normal push to agreed origin/main,
+  CI; без deployment/live acceptance. Последний финансовый пакет COMPLETE
+  по `output/v1-finance-source-20260922/result.json`, не переоткрывается.
+- Checkpoint 11:32 UTC: task-owned local diff; branch/base unchanged. Backend
+  and desktop/mobile Inbox implement preview, selected actions and explicit
+  staff confirmation. Website chat bypass removed; lead.captured now occurs
+  at actual confirmed creation. Preview replacement/new-message/race guards,
+  domain permissions/tenant and replay audit are covered.
+- Focused PASS: 36 tests / 38.441s (`output/ai-confirmation-final-focused.log`),
+  preview delta 10 / 9.867s, final 11 / 5.758s including event/audit exactly once
+  (`output/ai-confirmation-20260922/final-event-regression.log`). Each wrapper
+  also ran check and makemigrations --check --dry-run in isolated runtime.
+- Initial failures: 79 tests with 7 FAIL/2 fixture errors, then affected 140
+  tests with 2 old expectation failures; corrected under the approved contract.
+  Full suite is still required, no broad PASS inferred from focused results.
+- Frontend build/i18n/type/app/widget/bundle and 11 policy tests PASS before
+  final mobile/copy delta; initial missing actions.cancel fixed to common.cancel.
+  Final delta will be covered by full candidate gate.
+- Browser: isolated canonical servers, desktop preview/cancel/task-only confirm
+  and mobile 390x844 accessible confirmation/replay PASS. API readback: one
+  task, no lead/deal. `output/ai-confirmation-20260922/browser-result.json` records
+  boundary: backend preceded final event/preview race delta. Owned servers
+  stopped and isolated runtime cleaned. Final candidate browser recheck remains.
+- Next: reviewed candidate commit then full gate against the true starting base;
+  final browser, exact evidence/docs, normal push/readback and actual CI.
+  No migrations on working DB, providers/live channels, billing or next phase.
+
 ## V1-M01/M02 — локально проверено; публикация по конечной квитанции
 
 Code candidate `cc7050eb8f1ac5b59a56ff4ae922f6eb17aebadd`, base `5821941`.

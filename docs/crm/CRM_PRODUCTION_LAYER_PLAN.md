@@ -1,5 +1,16 @@
 # CRM Production Layer Plan
 
+## V1-A03–A09 confirmation candidate — 2026-09-22
+
+Текущий ограниченный пакет приводит legacy AI modes и website chat intake к
+подтверждению Lead/Task/Deal сотрудником. Inbox: предпросмотр → выбор конкретных
+действий → подтверждение → результат без дублей; запись остаётся ручной.
+Автоответ и автоматическая карточка клиента сохраняются. `message.received`
+остаётся событием входящего; website `lead.captured` возникает только после
+фактического создания заявки сотрудником. Отдельная форма сайта, live ИИ/каналы,
+качество ответов, billing и рассылка не входят. Это candidate, не закрытие всего
+AI-блока; [контракт и проверки](../testing/task-state/PRIMARY-SESSION.md).
+
 Last updated: 2026-09-22 (approved V1-M01/M02 financial boundary; historical closures preserved).
 
 ## Локально проверенный пакет V1-M01/M02 — 2026-09-22

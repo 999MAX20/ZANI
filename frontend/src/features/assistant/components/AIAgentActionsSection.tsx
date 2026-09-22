@@ -29,7 +29,7 @@ export function AgentActionsSection({
   const { t } = useI18n();
   const runtime = autoPipelineFromSettings(bot.settings_json || {});
   const toolEnabled = (tool: string) => form.allowed_tools.includes(tool);
-  const leadTaskAutonomy = runtime.mode === "lead_task" || runtime.mode === "draft_deal";
+  const proposesWork = runtime.enabled && (runtime.mode === "lead_task" || runtime.mode === "draft_deal");
   return (
     <div className="space-y-5">
       <Card variant="outlined">
@@ -40,15 +40,15 @@ export function AgentActionsSection({
             <AuthorityRow label={t("aiAgents.authority.suggestions")} value={t("aiAgents.authority.suggestOnly")} />
             <AuthorityRow
               label={t("aiAgents.authority.leadTask")}
-              value={leadTaskAutonomy && toolEnabled("create_lead") && toolEnabled("create_task") ? t("aiAgents.authority.autonomous") : t("aiAgents.authority.off")}
+              value={proposesWork && (toolEnabled("create_lead") || toolEnabled("create_task")) ? t("aiAgents.authority.staffConfirmation") : t("aiAgents.authority.off")}
             />
             <AuthorityRow
               label={t("aiAgents.authority.draftDeal")}
-              value={runtime.mode === "draft_deal" && toolEnabled("create_deal") ? t("aiAgents.authority.autonomousDraft") : t("aiAgents.authority.off")}
+              value={runtime.enabled && runtime.mode === "draft_deal" && toolEnabled("create_deal") ? t("aiAgents.authority.staffConfirmation") : t("aiAgents.authority.off")}
             />
             <AuthorityRow
               label={t("aiAgents.authority.appointment")}
-              value={runtime.create_appointment ? t("aiAgents.authority.explicitApproval") : t("aiAgents.authority.off")}
+              value={t("aiAgents.authority.staffBooking")}
             />
           </div>
         </CardBody>

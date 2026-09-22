@@ -2562,9 +2562,8 @@ export const ru: Record<string, string> = {
   "conversations.dealCreatedShort": "Сделка создана.",
   "conversations.taskCreatedShort": "Задача создана.",
   "conversations.pipelineAiSuffix": " Подсказка: {intent}, {confidence}%.",
-  "conversations.pipelineUpdated": "Связи с клиентом обновлены: {created}.{ai}",
-  "conversations.pipelineAlreadyLinked":
-    "Диалог уже связан с клиентом и сделкой.{ai}",
+  "conversations.pipelineUpdated": "Создано: {created}.{ai}",
+  "conversations.pipelineAlreadyLinked": "Выбранные действия уже выполнены.{ai}",
   "conversations.bulkDone": "Готово: обработано {count} диалогов.",
   "conversations.pipelineDealTitle": "Сделка: {title}",
   "conversations.attention": "Внимание",
@@ -3629,27 +3628,24 @@ export const ru: Record<string, string> = {
   "aiAgents.control.privacyText":
     "Агент не показывает клиенту служебные поля и внутренние заметки.",
   "aiAgents.control.pipelineTitle": "Работа с заявками и менеджером",
-  "aiAgents.control.pipelineText":
-    "Выберите, что агент может делать после диалога: только оценить клиента, создать заявку, поставить задачу или подготовить сделку.",
+  "aiAgents.control.pipelineText": "Выберите, какие предложения агент готовит для подтверждения сотрудником.",
   "aiAgents.control.mode": "Что делать после диалога",
   "aiAgents.control.mode.off": "Выключено",
   "aiAgents.control.mode.triage": "Только оценить обращение",
-  "aiAgents.control.mode.leadTask": "Создать заявку и задачу",
-  "aiAgents.control.mode.draftDeal": "Подготовить черновик сделки",
+  "aiAgents.control.mode.leadTask": "Предложить заявку и задачу",
+  "aiAgents.control.mode.draftDeal": "Предложить черновик сделки",
   "aiAgents.control.maxReplyChars": "Максимальная длина автоответа",
   "aiAgents.control.leadConfidence":
     "Насколько агент должен быть уверен для заявки: {value}",
   "aiAgents.control.dealConfidence":
     "Насколько агент должен быть уверен для сделки: {value}",
   "aiAgents.control.advancedTitle": "Расширенные ограничения",
-  "aiAgents.control.advancedText":
-    "Обычно менять не нужно. Эти настройки нужны, если агент слишком часто создает заявки или пишет слишком длинные ответы.",
+  "aiAgents.control.advancedText": "Настройки уверенности предложений и длины ответов.",
   "aiAgents.control.reviewFallbackTitle": "Проверять неуверенные решения",
   "aiAgents.control.reviewFallbackText":
     "Если AI использовал fallback или не уверен, диалог останется на проверке менеджера.",
-  "aiAgents.control.appointmentTitle": "Создавать запись",
-  "aiAgents.control.appointmentText":
-    "Агент может создать запись только из подтвержденного свободного слота.",
+  "aiAgents.control.appointmentTitle": "Собирать пожелания о записи",
+  "aiAgents.control.appointmentText": "Агент уточняет время; запись создаёт сотрудник.",
   "aiAgents.control.autoReplyTitle": "Автоматически отправлять ответ",
   "aiAgents.control.autoReplyText":
     "Ответ отправляется клиенту только после прохождения ограничений автопайплайна.",
@@ -3659,9 +3655,8 @@ export const ru: Record<string, string> = {
   "aiAgents.functions.taskTitle": "Создать задачу",
   "aiAgents.functions.taskText":
     "Агент может предложить задачу менеджеру после общения.",
-  "aiAgents.functions.dealTitle": "Обновить сделку",
-  "aiAgents.functions.dealText":
-    "Агент может предложить следующий статус сделки.",
+  "aiAgents.functions.dealTitle": "Предложить черновик сделки",
+  "aiAgents.functions.dealText": "Сотрудник проверяет предложение и подтверждает создание черновика.",
   "aiAgents.functions.managerTitle": "Передать менеджеру",
   "aiAgents.functions.managerText":
     "Агент может остановить сценарий и передать диалог человеку.",
@@ -3803,12 +3798,10 @@ export const ru: Record<string, string> = {
     "Выберите баланс качества и скорости. Для старта оставьте быстрый или качественный режим без частых изменений.",
   "aiAgents.hint.temperature":
     "Чем выше значение, тем свободнее формулировки. Для продаж рекомендуем 0.3-0.5, чтобы ответы были стабильными.",
-  "aiAgents.hint.pipelineMode":
-    "Режим определяет, что агент делает с диалогом в CRM. Для старта безопаснее «Заявка и задача».",
+  "aiAgents.hint.pipelineMode": "Заявка, задача и черновик сделки создаются после подтверждения выбранных действий сотрудником.",
   "aiAgents.hint.maxReplyChars":
     "Ограничивает длину автоответа. Рекомендация: 500-900 символов, чтобы клиент получил короткий ответ.",
-  "aiAgents.hint.leadConfidence":
-    "Минимальная уверенность для создания заявки. Чем выше порог, тем меньше автоматических ошибок.",
+  "aiAgents.hint.leadConfidence": "Минимальная уверенность для предложения заявки сотруднику.",
   "aiAgents.hint.dealConfidence":
     "Минимальная уверенность для черновика сделки. Рекомендация: держать выше порога заявки.",
   "aiAgents.hint.launchReady":
@@ -3817,8 +3810,7 @@ export const ru: Record<string, string> = {
     "Перед запуском добавьте знания и подключите хотя бы один активный канал.",
   "aiAgents.hint.tool.create_lead":
     "Включайте почти всегда: заявка фиксирует интерес клиента и не дает потерять обращение.",
-  "aiAgents.hint.tool.create_task":
-    "Полезно для команды: агент создаст задачу менеджеру после важного диалога.",
+  "aiAgents.hint.tool.create_task": "Агент предлагает задачу; сотрудник подтверждает её создание.",
   "aiAgents.hint.tool.create_deal":
     "Включайте, когда понятны этапы продаж и агент уже протестирован на реальных вопросах.",
   "aiAgents.hint.tool.handoff_to_manager":
@@ -5680,16 +5672,28 @@ export const ru: Record<string, string> = {
   "integrations.page.merchantResultsMeta": "Найдено: {found} из {total}.",
   "integrations.page.attentionTitle": "Требуют внимания",
   "integrations.page.attentionText": "Подключения с ошибкой или прерванной настройкой.",
+  "conversations.pipelineCreated.client": "карточка клиента",
+  "conversations.pipelineCreated.lead": "заявка",
+  "conversations.pipelineCreated.task": "задача",
+  "conversations.pipelineCreated.deal": "черновик сделки",
+  "conversations.confirmPipelineTitle": "Подтвердить действия ИИ",
+  "conversations.confirmPipelineActions": "Выберите действия для этого обращения",
+  "conversations.confirmPipeline.create_lead": "Создать заявку",
+  "conversations.confirmPipeline.create_task": "Создать задачу",
+  "conversations.confirmPipeline.create_deal": "Создать черновик сделки",
+  "conversations.confirmPipelineSubmit": "Подтвердить и выполнить",
+  "aiAgents.authority.staffConfirmation": "После подтверждения сотрудником",
+  "aiAgents.authority.staffBooking": "Запись выполняет сотрудник",
   "aiAgents.authority.title": "Полномочия агента",
   "aiAgents.authority.text": "Фактический режим выполнения с учетом настроек и разрешенных функций.",
   "aiAgents.authority.suggestions": "Ответы и квалификация",
-  "aiAgents.authority.leadTask": "Клиент, заявка и задача",
+  "aiAgents.authority.leadTask": "Заявка и задача",
   "aiAgents.authority.draftDeal": "Черновик сделки",
   "aiAgents.authority.appointment": "Запись клиента",
   "aiAgents.authority.suggestOnly": "Только рекомендация",
   "aiAgents.authority.autonomous": "Автоматически",
   "aiAgents.authority.autonomousDraft": "Автоматически, только черновик",
-  "aiAgents.authority.explicitApproval": "Только после выбора слота клиентом",
+  "aiAgents.authority.explicitApproval": "Запись выполняет сотрудник",
   "aiAgents.authority.off": "Отключено",
   "crmCard.closeInspector": "Закрыть контекстную панель",
   "crmCard.openInspector": "Открыть контекстную панель",

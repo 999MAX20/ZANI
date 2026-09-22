@@ -214,6 +214,8 @@ class InboxCreateDealSerializer(serializers.Serializer):
 
 
 class InboxRunPipelineSerializer(serializers.Serializer):
+    confirmed_actions = serializers.ListField(child=serializers.ChoiceField(choices=["create_lead", "create_deal", "create_task"]), allow_empty=False)
+    preview_id = serializers.CharField(required=False)
     use_ai_qualification = serializers.BooleanField(required=False, default=True)
     apply_ai_decisions = serializers.BooleanField(required=False, default=True)
     create_lead = serializers.BooleanField(required=False, default=True)
@@ -227,3 +229,11 @@ class InboxRunPipelineSerializer(serializers.Serializer):
     task_description = serializers.CharField(required=False, allow_blank=True)
     task_priority = serializers.ChoiceField(choices=["low", "normal", "high", "urgent"], default="normal")
     task_due_at = serializers.DateTimeField(required=False, allow_null=True)
+
+    def validate(self, attrs):
+        selected = {action for action in ("create_lead", "create_deal", "create_task") if attrs[action]}
+        if selected != set(attrs["confirmed_actions"]):
+            raise serializers.ValidationError({"confirmed_actions": "Confirm exactly the selected CRM actions."})
+        if attrs["use_ai_qualification"] and not attrs.get("preview_id"):
+            raise serializers.ValidationError({"preview_id": "Review the AI proposal before confirming."})
+        return attrs

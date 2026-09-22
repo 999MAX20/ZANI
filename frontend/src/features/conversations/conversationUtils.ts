@@ -97,6 +97,13 @@ export function getAutoPipelineInsight(conversation: InboxConversation) {
   const confidence = typeof qualification?.confidence === "number" ? Math.round(qualification.confidence * 100) : null;
   return {
     status: typeof payload?.status === "string" ? payload.status : "",
+    previewId: typeof payload.qualified_at === "string" ? payload.qualified_at : "",
+    summary: typeof qualification.summary === "string" ? qualification.summary : "",
+    proposedActions: [
+      ...(qualification.should_create_lead === true ? ["create_lead" as const] : []),
+      ...(qualification.should_create_task === true ? ["create_task" as const] : []),
+      ...(qualification.should_create_deal === true ? ["create_deal" as const] : []),
+    ],
     intent: typeof qualification?.intent === "string" ? qualification.intent : "",
     confidence,
     nextAction: typeof qualification?.next_action === "string" ? qualification.next_action : "",

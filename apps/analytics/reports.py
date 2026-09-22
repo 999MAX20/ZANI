@@ -8,10 +8,12 @@ from django.http import HttpResponse
 from django.utils import timezone
 
 from apps.analytics.crm_metrics import build_crm_operational_metrics
+from apps.analytics.financial_metrics import financial_report
 from apps.analytics.models import ReportWidget
 from apps.businesses.access import Actions, Resources, scope_queryset
 from apps.clients.models import Client
 from apps.core.csv_safety import safe_csv_cell
+from apps.core.date_ranges import parse_bounded_date_range
 from apps.crm.models import Deal
 from apps.leads.models import Lead
 from apps.scheduling.models import Appointment
@@ -19,9 +21,9 @@ from apps.tasks.models import Task
 
 
 DEFAULT_WIDGETS = [
-    ("source-roi", "Источники и ROI", ReportWidget.WidgetTypes.TABLE, {"report": "source_roi"}),
+    ("source-roi", "Источники и оценка услуг", ReportWidget.WidgetTypes.TABLE, {"report": "source_roi"}),
     ("funnel-velocity", "Скорость воронки", ReportWidget.WidgetTypes.FUNNEL, {"report": "funnel_velocity"}),
-    ("retention-ltv", "Повторность и LTV", ReportWidget.WidgetTypes.KPI, {"report": "retention_ltv"}),
+    ("retention-ltv", "Повторность и оценка услуг", ReportWidget.WidgetTypes.KPI, {"report": "retention_ltv"}),
     ("manager-performance", "Команда", ReportWidget.WidgetTypes.TABLE, {"report": "manager_performance"}),
 ]
 
@@ -45,6 +47,12 @@ def ensure_default_report_widgets(business):
 
 
 def build_report_summary(business, *, user=None, start_date=None, end_date=None):
+    financial_start, financial_end = start_date, end_date
+    if start_date is None or end_date is None:
+        financial_start, financial_end = parse_bounded_date_range({
+            "start": start_date.isoformat() if start_date else "",
+            "end": end_date.isoformat() if end_date else "",
+        })
     ensure_default_report_widgets(business)
     leads = Lead.objects.filter(business=business, is_archived=False)
     deals = Deal.objects.filter(business=business, is_archived=False)
@@ -65,6 +73,7 @@ def build_report_summary(business, *, user=None, start_date=None, end_date=None)
     return {
         "business": business.id,
         "period": {"start": str(start_date) if start_date else None, "end": str(end_date) if end_date else None},
+        "financial": financial_report(business, user=user, start_date=financial_start, end_date=financial_end),
         "widgets": [_widget_payload(widget) for widget in business.report_widgets.filter(is_active=True)],
         "source_roi": source_roi(leads, appointments),
         "funnel_velocity": funnel_velocity(leads, deals),
@@ -99,9 +108,10 @@ def source_roi(leads, appointments):
                 "leads": item["leads"],
                 "appointments": appointment_count,
                 "completed_appointments": source_appointments.get("completed_appointments", 0),
-                "revenue_estimate": str(source_appointments.get("revenue") or Decimal("0")),
+                "service_value_estimate": str(source_appointments.get("revenue") or Decimal("0")),
+                "revenue_estimate": None,
                 "conversion_rate": _percent(appointment_count, item["leads"]),
-                "roi_status": "tracked_without_cost",
+                "roi_status": "service_price_estimate_not_receipts",
             }
         )
     return rows
@@ -200,7 +210,8 @@ def retention_ltv(business, appointments):
         "total_clients": total_clients,
         "repeat_clients": len(repeat_clients),
         "repeat_rate": _percent(len(repeat_clients), total_clients),
-        "ltv_estimate": str(round(total_revenue / total_clients, 2)) if total_clients else "0",
+        "average_service_value_estimate": str(round(total_revenue / total_clients, 2)) if total_clients else "0",
+        "ltv_estimate": None,
         "data_quality": "estimate_from_completed_appointments",
     }
 
@@ -220,13 +231,13 @@ def export_report_csv(business, report_key, *, user=None, start_date=None, end_d
 
 def _export_rows(summary, report_key):
     if report_key == "source_roi":
-        return summary["source_roi"], ["source", "leads", "appointments", "completed_appointments", "conversion_rate", "revenue_estimate", "roi_status"]
+        return summary["source_roi"], ["source", "leads", "appointments", "completed_appointments", "conversion_rate", "service_value_estimate", "roi_status"]
     if report_key == "manager_performance":
         return summary["manager_performance"], ["user_id", "email", "full_name", "assigned_leads", "appointment_leads", "lost_leads", "won_deals", "lost_deals", "open_tasks"]
     if report_key == "funnel_velocity":
         return summary["funnel_velocity"]["deal_stages"], ["stage", "count", "avg_probability", "avg_days_in_stage"]
     if report_key == "retention_ltv":
-        return [summary["retention_ltv"]], ["total_clients", "repeat_clients", "repeat_rate", "ltv_estimate", "data_quality"]
+        return [summary["retention_ltv"]], ["total_clients", "repeat_clients", "repeat_rate", "average_service_value_estimate", "data_quality"]
     raise ValueError("Unsupported analytics report.")
 
 

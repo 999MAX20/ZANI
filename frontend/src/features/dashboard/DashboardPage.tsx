@@ -117,16 +117,12 @@ export function DashboardPage() {
     assignedTasks.filter(
       (task) => task.due_at && new Date(task.due_at) < new Date(),
     ).length;
-  const revenue = Number(dashboard?.revenue_estimate || 0);
-  const revenueHasData = Boolean(dashboard?.sales_events_count || revenue > 0);
   if (isOwnerView) {
     return (
       <OwnerDashboard
         dashboard={dashboard}
         metricsError={metrics.error}
         isCoreDataLoading={isCoreDataLoading}
-        revenue={revenue}
-        revenueHasData={revenueHasData}
         newLeadsCount={newLeadsCount}
         todayAppointmentsCount={todayAppointmentsCount}
         overdueTasks={overdueTasks}

@@ -19,6 +19,12 @@ SENSITIVE_PAYLOAD_KEYS = {
     "password",
 }
 
+# BusinessEvent is operational evidence, never a verified accounting snapshot.
+FINANCIAL_PAYLOAD_KEY = re.compile(
+    r"amount|price|total|revenue|receipt|payment|refund|ltv|profit|income|balance|turnover|currency",
+    re.IGNORECASE,
+)
+
 
 def build_business_event_sources(business, *, user=None, limit=24):
     if not _can_read_business_events(user, business):
@@ -40,7 +46,10 @@ def build_event_analyst_brief(*, business, user=None, limit=24):
         '"source_ids":["BE-1"]}],"actions":[{"id":"short_id","priority":"high|medium|low","label":"...",'
         '"description":"...","href":"/app/...","source_ids":["BE-1"]}]}. '
         "Каждый insight и action обязан ссылаться на source_ids из списка. "
-        "Не придумывай факты вне источников. Если данных мало, верни insight с severity=info."
+        "Не придумывай факты вне источников. Если данных мало, верни insight с severity=info. "
+        "Эти события подтверждают только операционные действия, не финансовые показатели. "
+        "Не делай выводы о поступлениях, возвратах, выручке или прибыли по BusinessEvent. "
+        "Финансовые показатели доступны только в отчёте из проверенного учётного источника."
     )
     result, log = run_ai_request(
         business=business,
@@ -50,7 +59,10 @@ def build_event_analyst_brief(*, business, user=None, limit=24):
         user_input=user_input,
         input_json={
             "business_event_sources": sources,
-            "source_policy": "Use only listed BusinessEvent sources. Cite source_ids in every insight and action.",
+            "source_policy": (
+                "Use only listed operational BusinessEvent sources. Cite source_ids in every insight and action. "
+                "Financial analysis is unavailable from these sources: do not infer receipts, refunds, revenue or profit."
+            ),
         },
         allow_mock=True,
         model_tier="smart",
@@ -86,6 +98,7 @@ def _event_source(event):
         "occurred_at": event.occurred_at.isoformat(),
         "connector": event.connector.name if event.connector else None,
         "external_id": event.external_id,
+        "financial_verification": "not_verified",
         "summary": _payload_summary(payload),
         "payload": payload,
     }
@@ -102,13 +115,22 @@ def _safe_payload(payload):
     for key, value in payload.items():
         if key.lower() in SENSITIVE_PAYLOAD_KEYS:
             safe[key] = "***"
+        elif FINANCIAL_PAYLOAD_KEY.search(key):
+            continue
         elif isinstance(value, dict):
             safe[key] = _safe_payload(value)
         elif isinstance(value, list):
-            safe[key] = value[:5]
+            safe[key] = _safe_list(value)
         else:
             safe[key] = value
     return safe
+
+
+def _safe_list(items):
+    return [
+        _safe_payload(item) if isinstance(item, dict) else _safe_list(item) if isinstance(item, list) else item
+        for item in items[:5]
+    ]
 
 
 def _payload_summary(payload):

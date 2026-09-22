@@ -43,6 +43,7 @@ Use `integrations/` for connector architecture, provider rollout, marketplace/AP
 
 - `integrations/README.md`
 - `integrations/CONNECTOR_BLUEPRINT.md`
+- [Verified financial source contract](integrations/financial-source-contract.md)
 - `integrations/integrations.md`
 - `integrations/provider-rollout.md`
 - `integrations/marketplace-integrations.md`

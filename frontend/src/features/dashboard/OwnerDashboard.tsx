@@ -10,6 +10,7 @@ import {
   UsersRound,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import type { ReactNode } from "react";
 import { Link } from "react-router";
 
 import type {
@@ -28,14 +29,13 @@ import { ErrorState, LoadingState } from "../../components/ui/StateViews";
 import { useI18n } from "../../lib/i18n";
 import { businessRoleLabel } from "../../lib/permissions";
 import type { OwnerDashboardMetrics } from "../../types";
-import { formatMoney } from "./dashboardUtils";
+import { formatMoney } from "../../lib/format";
+import { FinancialStatus } from "../analytics/FinancialSummary";
 
 type OwnerDashboardProps = {
   dashboard?: OwnerDashboardMetrics;
   metricsError: unknown;
   isCoreDataLoading: boolean;
-  revenue: number;
-  revenueHasData: boolean;
   newLeadsCount: number;
   todayAppointmentsCount: number;
   overdueTasks: number;
@@ -80,7 +80,7 @@ type BriefItem = {
 type DashboardMetricProps = {
   label: string;
   value: string | number;
-  hint: string;
+  hint: ReactNode;
   href: string;
   icon: LucideIcon;
   tone: "brand" | "green" | "amber" | "slate";
@@ -117,7 +117,7 @@ function DashboardMetric({
       to={href}
       interactive
       padding="md"
-      className="group flex min-h-28 items-start gap-3"
+      className="group grid min-h-28 grid-cols-[40px_1fr_16px] content-start items-start gap-x-3 gap-y-2"
     >
       <IconBubble icon={icon} tone={tone} className="h-10 w-10 rounded-control" />
       <span className="min-w-0 flex-1">
@@ -125,15 +125,13 @@ function DashboardMetric({
         <span className="mt-1 block text-2xl font-semibold tracking-tight tabular-nums text-zani-ink">
           {value}
         </span>
-        <span className="mt-1 block truncate text-xs font-medium text-zani-faint">
-          {hint}
-        </span>
       </span>
       <ArrowRight
         aria-hidden="true"
         size={16}
         className="mt-1 shrink-0 text-zani-faint transition-transform group-hover:translate-x-0.5 group-hover:text-brand-700"
       />
+      <span className="col-span-3 block text-xs font-medium text-zani-faint">{hint}</span>
     </Surface>
   );
 }
@@ -444,8 +442,6 @@ export function OwnerDashboard({
   dashboard,
   metricsError,
   isCoreDataLoading,
-  revenue,
-  revenueHasData,
   newLeadsCount,
   todayAppointmentsCount,
   overdueTasks,
@@ -547,7 +543,7 @@ export function OwnerDashboard({
     aiStatus,
     t,
   });
-  const revenueToday = Number(dashboard?.revenue?.today || revenue || 0);
+  const financial = dashboard?.financial;
 
   if (isCoreDataLoading) {
     return (
@@ -595,20 +591,16 @@ export function OwnerDashboard({
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <DashboardMetric
-          label={t("dashboard.revenue")}
+          label={t("finance.net_receipts")}
           value={
-            revenueHasData
-              ? formatMoney(revenueToday)
-              : t("dashboard.revenueMissingValue")
+            financial && financial.state !== "unavailable"
+              ? formatMoney(financial.net_receipts, financial.currency)
+              : t("finance.unavailable")
           }
-          hint={
-            revenueHasData
-              ? t("dashboard.revenueExactText")
-              : t("dashboard.revenueMissingShort")
-          }
-          href={revenueHasData ? "/app/analytics" : "/app/settings#data-tools"}
+          hint={<FinancialStatus report={financial} compact />}
+          href="/app/analytics"
           icon={CircleDollarSign}
-          tone="brand"
+          tone={financial?.state === "stale" ? "amber" : "brand"}
         />
         {canViewLeads ? (
           <DashboardMetric

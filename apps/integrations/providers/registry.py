@@ -13,6 +13,15 @@ PROVIDERS = {
     "email": MockChannelProvider("email"),
 }
 
+# Only code-reviewed accounting adapters may supply locally persisted, verified
+# financial snapshots. Existing messaging/order/import providers do not qualify.
+# Tests patch this registry in isolation; no production mock is registered.
+FINANCIAL_SOURCE_READERS = {}
+
+
+def get_financial_source_reader(provider):
+    return FINANCIAL_SOURCE_READERS.get(provider)
+
 
 class UnknownIntegrationProvider(ValueError):
     pass

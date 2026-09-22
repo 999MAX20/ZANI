@@ -1,4 +1,4 @@
-from decimal import Decimal, InvalidOperation
+from zoneinfo import ZoneInfo
 
 from django.db.models import Count, Sum
 from django.utils import timezone
@@ -8,6 +8,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from apps.analytics.crm_metrics import build_crm_operational_metrics
+from apps.analytics.financial_metrics import financial_report
 from apps.analytics.models import AnalyticsEvent, ReportWidget, ScheduledReport
 from apps.analytics.reports import build_report_summary
 from apps.analytics.serializers import AnalyticsEventSerializer, ReportWidgetSerializer, ScheduledReportSerializer
@@ -63,7 +64,12 @@ def owner_dashboard(request):
     business = _resolve_business(request)
     assert_can(request.user, business, Resources.ANALYTICS, Actions.VIEW)
     assert_resource_enabled(business, Resources.ANALYTICS)
-    today = timezone.localdate()
+    today = timezone.localdate(timezone=ZoneInfo(business.timezone))
+    financial_start, financial_end = parse_bounded_date_range(
+        {**request.query_params.dict(), "end": request.query_params.get("end") or today.isoformat()},
+        default_days=1,
+    )
+    financial = financial_report(business, user=request.user, start_date=financial_start, end_date=financial_end)
 
     leads = scope_queryset(Lead.objects.filter(business=business), request.user, business, Resources.LEADS)
     appointments = scope_queryset(Appointment.objects.filter(business=business), request.user, business, Resources.APPOINTMENTS)
@@ -79,25 +85,14 @@ def owner_dashboard(request):
         .order_by("-count", "source")
     )
     completed_appointments = appointments.filter(status=Appointment.Statuses.COMPLETED)
-    appointment_revenue = completed_appointments.aggregate(total=Sum("service__price_from"))["total"] or 0
+    service_value_estimate = completed_appointments.aggregate(total=Sum("service__price_from"))["total"] or 0
     sales_events = BusinessEvent.objects.filter(business=business, event_type__in=SALES_REVENUE_EVENT_TYPES)
-    imported_revenue = sum((_payload_amount(event.payload_json) for event in sales_events), Decimal("0"))
-    revenue = appointment_revenue + imported_revenue
     now = timezone.now()
     open_tasks = tasks.exclude(status__in=[Task.Statuses.DONE, Task.Statuses.CANCELLED])
     new_leads_count = leads.filter(status=Lead.Statuses.NEW).count()
     overdue_tasks_count = overdue_tasks_queryset(queryset=open_tasks, now=now).count()
     crm_operational_metrics = build_crm_operational_metrics(business, user=request.user, now=now)
     sales_events_count = sales_events.count()
-    today_imported_revenue = sum(
-        (_payload_amount(event.payload_json) for event in sales_events.filter(occurred_at__date=today)),
-        Decimal("0"),
-    )
-    yesterday = today - timezone.timedelta(days=1)
-    yesterday_imported_revenue = sum(
-        (_payload_amount(event.payload_json) for event in sales_events.filter(occurred_at__date=yesterday)),
-        Decimal("0"),
-    )
     connected_connectors = BusinessConnector.objects.filter(
         business=business,
         status__in=[BusinessConnector.Statuses.CONNECTED, BusinessConnector.Statuses.SYNCING],
@@ -140,19 +135,18 @@ def owner_dashboard(request):
         "open_tasks": open_tasks.count(),
         "overdue_tasks": overdue_tasks_count,
         "manager_response_time": None,
-        "revenue_estimate": str(revenue),
+        "financial": financial,
+        "operational_values": {"completed_services_estimate": str(service_value_estimate), "currency": business.currency},
+        # Deprecated ambiguous fields deliberately contain no financial amount.
+        "revenue_estimate": None,
         "sales_events_count": sales_events_count,
         "revenue": {
-            "today": str(today_imported_revenue),
-            "yesterday": str(yesterday_imported_revenue),
-            "total_estimate": str(revenue),
-            "growth_percent": _growth_percent(today_imported_revenue, yesterday_imported_revenue),
+            "today": None, "yesterday": None, "total_estimate": None, "growth_percent": None,
         },
         "business_pulse": _build_business_pulse(
             has_sales_data=sales_events.exists(),
             new_leads_count=new_leads_count,
             overdue_tasks_count=overdue_tasks_count,
-            revenue=revenue,
             top_source=leads_by_source[0]["source"] if leads_by_source else "",
             setup_score=setup_score,
         ),
@@ -187,9 +181,9 @@ def owner_dashboard(request):
         "data_quality": {
             "has_sales_data": sales_events.exists(),
             "sales_events_count": sales_events_count,
-            "recommendation": "Загрузите CSV продаж или добавьте продажу вручную, чтобы ZANI считал выручку без догадок."
-            if not sales_events.exists()
-            else "Данные продаж подключены. ZANI использует загруженные события для базовой выручки.",
+            "financial_state": financial["state"],
+            "financial_reason": financial["reason"],
+            "recommendation": "Импортные события и оценки услуг не подтверждают поступления. Финансовые показатели требуют проверенного источника.",
         },
         "connector_health": connector_health,
         "latest_business_events": latest_business_events,
@@ -288,7 +282,7 @@ def _build_mobile_owner_onboarding(*, business, setup_score, setup_sources, has_
         {
             "key": "sales_data",
             "title": "Загрузить продажи",
-            "description": "Без продаж AI не будет выдумывать аналитику. CSV/Excel даст выручку, динамику и первые выводы.",
+            "description": "Импорт сохраняет сведения о продажах отдельно от проверенных поступлений.",
             "status": "done" if has_sales_data else "todo",
             "href": "/app/settings#data-tools",
             "cta": "Загрузить Excel",
@@ -331,19 +325,13 @@ def _build_mobile_owner_onboarding(*, business, setup_score, setup_sources, has_
     }
 
 
-def _growth_percent(today_value, yesterday_value):
-    if not yesterday_value:
-        return None if not today_value else 100
-    return round(((today_value - yesterday_value) / yesterday_value) * 100)
-
-
-def _build_business_pulse(*, has_sales_data, new_leads_count, overdue_tasks_count, revenue, top_source, setup_score):
+def _build_business_pulse(*, has_sales_data, new_leads_count, overdue_tasks_count, top_source, setup_score):
     if not has_sales_data:
         return {
             "tone": "setup",
-            "title": "ZANI ждёт данные продаж",
-            "text": "Лендинг и CRM уже подключены. Загрузите Excel/CSV или добавьте продажи вручную, чтобы владелец увидел выручку, каналы и первые AI-выводы.",
-            "primary_action": {"label": "Загрузить Excel", "href": "/app/settings#data-tools"},
+            "title": "Операционная CRM доступна",
+            "text": "Заявки, записи и задачи доступны. Финансовые показатели требуют проверенного источника.",
+            "primary_action": {"label": "Открыть заявки", "href": "/app/leads"},
         }
     if overdue_tasks_count:
         return {
@@ -358,14 +346,6 @@ def _build_business_pulse(*, has_sales_data, new_leads_count, overdue_tasks_coun
             "title": "Новые заявки ждут обработки",
             "text": f"Сегодня в работе {new_leads_count} новых заявок. Быстрая реакция поможет не потерять клиентов.",
             "primary_action": {"label": "Открыть заявки", "href": "/app/leads"},
-        }
-    if revenue:
-        source_text = f" Лучший источник сейчас: {top_source}." if top_source else ""
-        return {
-            "tone": "growth",
-            "title": "Бизнес начал давать данные",
-            "text": f"ZANI уже видит продажи и может считать базовую выручку.{source_text} Следующий шаг — подключить каналы и сотрудников.",
-            "primary_action": {"label": "Подключить каналы", "href": "/app/integrations"},
         }
     return {
         "tone": "setup",
@@ -390,7 +370,7 @@ def _build_owner_recommendations(*, has_sales_data, new_leads_count, overdue_tas
         recommendations.append({
             "key": "upload_sales",
             "title": "Загрузить продажи",
-            "description": "Без продаж ZANI не будет выдумывать аналитику. Загрузите Excel/CSV, чтобы увидеть выручку и динамику.",
+            "description": "Импорт сохраняет сведения о продажах. Он не подтверждает поступления из учётной системы.",
             "priority": "high",
             "action_label": "Загрузить данные",
             "href": "/app/settings#data-tools",
@@ -440,13 +420,6 @@ def _resolve_business(request):
     return business
 
 
-def _payload_amount(payload):
-    try:
-        return Decimal(str((payload or {}).get("amount", "0")).replace(",", "."))
-    except (InvalidOperation, TypeError, ValueError):
-        return Decimal("0")
-
-
 def _latest_business_events(business):
     events = BusinessEvent.objects.filter(business=business).select_related("connector").order_by("-occurred_at", "-created_at")[:6]
     return [
@@ -457,7 +430,8 @@ def _latest_business_events(business):
             "connector": event.connector.name if event.connector else "",
             "occurred_at": event.occurred_at.isoformat(),
             "status": event.status,
-            "amount": str(_payload_amount(event.payload_json)),
+            "amount": None,
+            "financial_verification": "not_verified",
         }
         for event in events
     ]

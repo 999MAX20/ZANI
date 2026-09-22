@@ -2,6 +2,12 @@
 
 This file is the working reference for role-aware behavior in ZANI.
 
+V1-M01/M02 (2026-09-22): a whole-business verified financial snapshot requires
+`analytics:view` at BUSINESS scope and the analytics capability. OWN/TEAM scopes
+receive unavailable finance, including no source name or stale amounts.
+Manual journal permissions remain `payments:*`; SaaS billing is unchanged.
+See [financial source contract](../integrations/financial-source-contract.md).
+
 ## Approved V1 business policy — 2026-09-16
 
 [V1 product rules](../product/V1_PRODUCT_RULES.md), sections 5–6, require ready-made

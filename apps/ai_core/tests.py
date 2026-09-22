@@ -270,7 +270,7 @@ class AICoreFoundationTests(TestCase):
             external_id="order-1",
             deduplication_key="order-1",
             status=BusinessEvent.Statuses.RECEIVED,
-            payload_json={"amount": 15000, "api_key": "secret-key"},
+            payload_json={"amount": 15000, "api_key": "secret-key", "items": [{"price": 9999, "sku": "A1"}]},
         )
         self.api.force_authenticate(self.owner)
 
@@ -280,12 +280,18 @@ class AICoreFoundationTests(TestCase):
         self.assertTrue(response.data["is_mock"])
         self.assertEqual(response.data["sources"][0]["id"], f"BE-{event.id}")
         self.assertEqual(response.data["sources"][0]["payload"]["api_key"], "***")
+        self.assertEqual(response.data["sources"][0]["financial_verification"], "not_verified")
+        self.assertNotIn("amount", response.data["sources"][0]["payload"])
+        self.assertEqual(response.data["sources"][0]["payload"]["items"], [{"sku": "A1"}])
         self.assertTrue(response.data["insights"])
         self.assertIn(f"BE-{event.id}", response.data["insights"][0]["source_ids"])
         self.assertTrue(response.data["actions"])
         log = AIRequestLog.objects.get(prompt_type="business_event_analyst")
         self.assertEqual(log.business, self.business)
         self.assertEqual(log.input_json["business_event_sources"][0]["id"], f"BE-{event.id}")
+        self.assertNotIn("15000", str(log.input_json))
+        self.assertNotIn("9999", str(log.input_json))
+        self.assertIn("Financial analysis is unavailable", log.input_json["source_policy"])
 
     def test_ai_analyst_brief_rejects_foreign_business(self):
         self.api.force_authenticate(self.owner)

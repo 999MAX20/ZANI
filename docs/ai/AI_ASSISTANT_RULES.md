@@ -1,5 +1,13 @@
 # AI Assistant And AI Analyst Rules
 
+V1-M01/M02 (2026-09-22): BusinessEvent Analyst is operational only. Generic sale
+events, service/deal values and manual payments do not certify receipts/refunds.
+Its event payload excludes financial fields and its source policy forbids
+financial conclusions from those events. Finance must use the
+[verified source contract](../integrations/financial-source-contract.md), including
+permissions, period, no-data and stale-snapshot boundaries. This package adds
+neither a financial AI report nor live provider calls.
+
 This document defines what ZANI AI features may do, what they must not do, and how they should use business data.
 
 ## Approved V1 policy — 2026-09-16

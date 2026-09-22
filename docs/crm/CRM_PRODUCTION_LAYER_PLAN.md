@@ -1,6 +1,17 @@
 # CRM Production Layer Plan
 
-Last updated: 2026-09-21 (specialist scheduling package locally verified; historical closures preserved).
+Last updated: 2026-09-22 (approved V1-M01/M02 financial boundary; historical closures preserved).
+
+## Активный пакет V1-M01/M02 — 2026-09-22
+
+«Ручной учёт» сохраняется отдельно. Финансовая аналитика допускает только
+проверенный учётный источник с полным периодом; без него — no-data, при сбое —
+прежний доступный снимок с предупреждением и реальным временем. Операционные
+оценки не становятся поступлениями. [Контракт источника](../integrations/financial-source-contract.md),
+[checkpoint и gates](../testing/task-state/PRIMARY-SESSION.md).
+Конкретный коннектор, live подключение и SaaS billing вне этого пакета.
+Scheduling завершён на `5821941` с push/readback/CI; описание ниже сохраняет
+исторические границы этапа. Новый пакет пока не отмечен завершённым.
 
 ## Локальная CRM и допуск клиники — 2026-09-21
 

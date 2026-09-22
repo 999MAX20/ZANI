@@ -1,5 +1,33 @@
 # Client payments — implementation contract
 
+## Owner decision 2026-09-22 — manual accounting is separate
+
+The existing journal is named **Ручной учёт** (Manual accounting). Preserve all
+receipts, partial payments, refunds, links, permissions, history, merge behavior
+and replay protection. No destructive migration or rewriting of ledger facts.
+It is not automatically added to financial KPIs or reconciled/summed with an
+accounting-system feed. The earlier proposal to feed Payment into general
+financial analytics is superseded by V1-M01/M02.
+
+General financial reporting requires a supported, verified accounting source,
+complete period coverage and a real last-successful-update timestamp. A connector
+status, imported sale/order event or service-price estimate cannot establish
+that evidence. Missing or incomplete first data means unavailable, not zero.
+Verified zero requires complete coverage and no receipts/refunds. A failed or
+stopped refresh retains the last accessible verified snapshot, clearly marked
+with its real source/period/as-of and a warning; it never bypasses permissions.
+
+Operational deal/service estimates remain explicitly separate from received
+money. CRM operational analytics and the CRM's own SaaS billing remain available.
+No currently registered provider proves this financial coverage contract;
+production must not promote mocks/imported events into a financial source.
+The bounded implementation and evidence are tracked in
+[PRIMARY-SESSION](../testing/task-state/PRIMARY-SESSION.md). A live accounting
+connector, reconciliation rules and provider credentials are a separate scope.
+
+The original manual-journal acceptance and evidence below are retained as history;
+this decision does not reopen or erase completed ledger invariants.
+
 ## Bounded phase: manual payment journal
 
 Approved workflow: Clients header → Payments → journal → Add payment. The client

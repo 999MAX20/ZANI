@@ -17,6 +17,7 @@ import { formatMoney } from "../../lib/format";
 import { useI18n } from "../../lib/i18n";
 import type { CrmAiInsightCard, TeamPerformanceActionItem, TeamPerformanceMember, TeamPerformanceTeam } from "../../types";
 import type { LucideIcon } from "lucide-react";
+import { FinancialSummary } from "./FinancialSummary";
 
 function Stat({ label, value, hint, icon: Icon }: { label: string; value: number | string; hint?: string; icon: typeof Flame }) {
   return (
@@ -202,6 +203,7 @@ export function AnalyticsPage() {
         <Stat label={t("analytics.noShowRate")} value={`${noShowRate}%`} hint={t("analytics.noShowHint")} icon={TrendingDown} />
       </div>
 
+      {report?.financial ? <FinancialSummary report={report.financial} /> : null}
       <PageAiHints items={analyticsHints} className="mt-6" />
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[1fr_1fr]">
@@ -277,8 +279,8 @@ export function AnalyticsPage() {
                   <p className="mt-1 text-sm text-zani-subtle">{t("analytics.repeatClientsCount", { count: report.retention_ltv.repeat_clients })}</p>
                 </div>
                 <div className="rounded-card border border-zani-border bg-surface-muted p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zani-muted">{t("analytics.ltvEstimate")}</p>
-                   <p className="mt-2 text-3xl font-semibold text-zani-ink">{formatMoney(report.retention_ltv.ltv_estimate)}</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zani-muted">{t("finance.averageServiceEstimate")}</p>
+                   <p className="mt-2 text-3xl font-semibold text-zani-ink">{formatMoney(report.retention_ltv.average_service_value_estimate, business.currency)}</p>
                    <p className="mt-1 text-sm text-zani-subtle">{translatedToken(t, "analytics.dataQuality", report.retention_ltv.data_quality)}</p>
                 </div>
                 <div className="rounded-card border border-zani-border bg-surface-muted p-4">
@@ -345,7 +347,7 @@ export function AnalyticsPage() {
                   <MiniMetric label={t("nav.leads")} value={row.leads} />
                   <MiniMetric label={t("nav.appointments")} value={row.appointments} />
                   <MiniMetric label={t("dashboard.conversion")} value={`${row.conversion_rate}%`} />
-                   <MiniMetric label={t("dashboard.revenue")} value={formatMoney(row.revenue_estimate)} />
+                   <MiniMetric label={t("finance.serviceEstimate")} value={formatMoney(row.service_value_estimate, business.currency)} />
                 </div>
               ))}
               {!report?.source_roi?.length ? <p className="py-3 text-sm text-zani-subtle">{t("analytics.sourcesEmpty")}</p> : null}

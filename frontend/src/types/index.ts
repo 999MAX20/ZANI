@@ -1629,6 +1629,18 @@ export type AvailableSlot = {
   end_at: string;
 };
 
+export type FinancialReport = {
+  state: "unavailable" | "available" | "stale";
+  reason: string | null;
+  period: { start: string; end: string };
+  source: { id: Id; name: string; provider: string } | null;
+  last_successful_sync_at: string | null;
+  currency: string;
+  receipts: string | null;
+  refunds: string | null;
+  net_receipts: string | null;
+};
+
 export type OwnerDashboardMetrics = {
   business: Id;
   new_leads: number;
@@ -1641,12 +1653,14 @@ export type OwnerDashboardMetrics = {
   open_tasks: number;
   overdue_tasks: number;
   manager_response_time: number | null;
-  revenue_estimate: string;
+  financial: FinancialReport;
+  operational_values: { completed_services_estimate: string; currency: string };
+  revenue_estimate: null;
   sales_events_count?: number;
   revenue?: {
-    today: string;
-    yesterday: string;
-    total_estimate: string;
+    today: null;
+    yesterday: null;
+    total_estimate: null;
     growth_percent: number | null;
   };
   business_pulse?: {
@@ -1699,7 +1713,8 @@ export type OwnerDashboardMetrics = {
     connector: string;
     occurred_at: string;
     status: string;
-    amount: string;
+    amount: null;
+    financial_verification: "not_verified";
   }>;
   attention_items?: Array<{
     key: "new_leads" | "overdue_tasks" | "connector_errors" | "connector_pending" | "sales_data" | string;
@@ -1889,6 +1904,7 @@ export type TeamPerformanceMetrics = {
 
 export type AnalyticsReportSummary = {
   business: Id;
+  financial: FinancialReport;
   period: { start: string | null; end: string | null };
   widgets: Array<Pick<ReportWidget, "id" | "key" | "title" | "widget_type" | "config_json" | "sort_order">>;
   source_roi: Array<{
@@ -1896,7 +1912,8 @@ export type AnalyticsReportSummary = {
     leads: number;
     appointments: number;
     completed_appointments: number;
-    revenue_estimate: string;
+    service_value_estimate: string;
+    revenue_estimate: null;
     conversion_rate: number;
     roi_status: string;
   }>;
@@ -1923,7 +1940,8 @@ export type AnalyticsReportSummary = {
     total_clients: number;
     repeat_clients: number;
     repeat_rate: number;
-    ltv_estimate: string;
+    average_service_value_estimate: string;
+    ltv_estimate: null;
     data_quality: string;
   };
   crm_funnel?: CrmFunnelMetrics;

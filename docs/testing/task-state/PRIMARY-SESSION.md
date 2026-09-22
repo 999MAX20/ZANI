@@ -1,6 +1,79 @@
 # PRIMARY-SESSION — Platforma.CRM
 
-Дата: 2026-09-21. Это карточка исполнения, не продуктовый backlog.
+Дата: 2026-09-22. Это карточка исполнения, не продуктовый backlog.
+
+## Активный пакет V1-M01/M02 — ручной учёт отдельно, проверенный финансовый источник
+
+- Owner authorization через Оркестратор 2026-09-22: «да» на отдельный ручной
+  журнал и финансовые показатели общей аналитики только из проверенной
+  подключённой учётной системы. Прежнее предложение суммировать Payment ledger
+  в общие financial KPI отменено. Источник: V1-M01/M02 и блок 4 local-crm-completion.
+- Mode: implementation; gap: approved policy change + code/UI/API evidence.
+  Один полный ограниченный пакет; не вся очередь пилота.
+- Единственный writer/primary `01a0c36e-33aa-7c72-be9b-72624dd2c739`, registry idle.
+  Canonical root `C:\Users\user\Desktop\Zani`, branch `codex/ui-testing-toolkit`,
+  clean starting HEAD/base `5821941880f1ed26aa1e34e34e155de1f326b813`.
+  Snapshot: `output/v1-finance-source-20260922/starting-snapshot.json`.
+- Observable result: ручной журнал сохраняет данные/входы/права/историю/replay и
+  называется «Ручной учёт». Общая финансовая аналитика показывает поступления,
+  возвраты и итог только при проверенном источнике с полным покрытием периода;
+  иначе явное unavailable, не ноль. Операционные CRM показатели остаются.
+  Ошибка/остановка обновления не стирает прежний доступный снимок: предупреждение,
+  источник, период, реальное время последнего успешного обновления. Нет снимка —
+  нет финансовых данных. Ноль допустим только при подтверждённой полноте периода.
+- Reuse: Payment ledger/services/UI без новой денежной записи; analytics dashboard,
+  reports/exports и потребители; BusinessConnector, ConnectorSyncRun/provider/status
+  слой, общие permissions, frontend API/i18n/design primitives. Не дублировать
+  аналитику и не считать generic sale BusinessEvent подтверждением поступления.
+- Discovery: dashboard суммирует service.price_from и generic sales events;
+  source ROI/LTV выводят оценки. Зарегистрированные коннекторы не доказывают
+  полноту финансового периода/верификацию поступлений. Production не получает
+  выдуманный финансовый источник; положительные состояния только в явных
+  изолированных проверках контракта. TTL и правила внешней сверки не выдумывать.
+- Scope: минимальный общий контракт доступности/источника/периода/актуальности,
+  соответствующие backend/API/frontend и AI/export потребители, профильные тесты,
+  канонические V1/client-payments/CRM/inventory docs. Требования уточняются сейчас;
+  реализацию не отмечать завершённой до gate/publication/CI.
+- Permissions/tenant: сохранить backend scope, не раскрывать общий финансовый
+  снимок через OWN/TEAM или чужой business; просроченность не обходит права.
+  Notification/BusinessEvent writes: новых отправок/триггеров нет. AI: только
+  источник/контекст и no-data граница, без живых запросов и новых write actions.
+  Billing SaaS/entitlements не менять и не скрывать как финансы клиники.
+- Schema/env: переиспользовать существующий integration слой; необходимость
+  схемы установить по коду. Любая намеренная migration только generation/test DB.
+  Не делать конкретный коннектор/1C/MacDent, live API/AI/WA/Instagram, новые метрики,
+  долг/бухгалтерию, redesign/pricing, scheduling, Market, deploy, working-DB
+  migrate/seed, worktree или ротацию.
+- Acceptance: API и browser для no source, first/incomplete load, verified zero,
+  receipt+refund, failed sync after successful snapshot; без двойного учёта;
+  manual journal сохранён отдельно; permission/tenant denial и consumers/export
+  не дают обхода; source/period/as-of не выдуманы. Live integration не объявлять.
+- Gates: isolated focused analytics/integrations/payments/affected AI/access/export;
+  type/i18n/build и targeted browser всех состояний + ручного журнала; full gate
+  на code candidate против captured base; review, explicit commit, normal push
+  origin/main, remote readback, фактический CI. Остановиться после этого пакета.
+- Checkpoint 2026-09-22: HEAD/base прежний `5821941`, diff только этого пакета.
+  Общий financial_report/adapter contract, API/UI/RU/EN/KK, estimates/CSV и AI
+  boundary реализованы; production registry пустой, schema без изменений.
+  PASS: первые 12 contract tests; affected 274 имел один старый assertion о
+  «росте» из CSV-суммы, исправлен под утверждённое правило; analytics 21 PASS;
+  итоговые analytics/AI/import-export 75 PASS. Check/migration drift PASS.
+  I18n 4963 keys и tsc PASS. Desktop/mobile: 14 групп assertions PASS — no-source,
+  manual receipt/refund/replay/оба входа, initial/zero/positive/stale/stopped.
+  Положительная финансовая UI-проверка — явные response fixtures, не live provider.
+  Уточнение: final browser assertions PASS; ошибка wrapper только при cleanup
+  временной SQLite на Windows; адресный cleanup-only PASS после завершения
+  собственного дерева процессов. Все browser assertions прошли до этой ошибки.
+  Optional daily-workspaces policy: 4 PASS / 2 FAIL, те же два FAIL доказаны
+  read-only на `5821941` через git show in-memory. Не ослаблены и не исправляются
+  вне scope; backend permissions и reachable flows проверены отдельно.
+  Следующий шаг: review/кандидат, обязательный full gate против captured base,
+  затем normal push/readback/actual CI. Commit/push ещё не выполнены.
+  Evidence: `output/v1-finance-source-20260922/`, точные commands/results/skips
+  в `report.md`; текущий статус всегда сверять с конечным `result.json`.
+- Закрытый scheduling пакет на `5821941` завершён с push/CI; его квитанция
+  `output/v1-scheduling-20260921/result.json` = COMPLETE_PUBLISHED_CI_SUCCESS.
+  Старые pending формулировки ниже — история. Scheduling/W05/W06/Git не повторять.
 
 ## V1-F06 / V1-W02 — реализация проверена, публикация по квитанции
 

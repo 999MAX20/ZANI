@@ -166,7 +166,9 @@ class ImportExportTests(TestCase):
         dashboard = self.api.get("/api/analytics/owner-dashboard/", {"business": self.business.id})
 
         self.assertEqual(dashboard.status_code, 200)
-        self.assertEqual(dashboard.data["revenue_estimate"], "15000")
+        self.assertIsNone(dashboard.data["revenue_estimate"])
+        self.assertEqual(dashboard.data["financial"]["state"], "unavailable")
+        self.assertIsNone(dashboard.data["financial"]["receipts"])
         self.assertTrue(dashboard.data["data_quality"]["has_sales_data"])
 
     def test_repeated_sales_import_is_idempotent_by_external_id(self):

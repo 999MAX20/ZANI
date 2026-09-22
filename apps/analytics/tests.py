@@ -85,7 +85,9 @@ class OwnerDashboardAnalyticsTests(TestCase):
         self.assertEqual(response.data["conversion_lead_to_appointment"], 33)
         self.assertEqual(response.data["open_tasks"], 2)
         self.assertEqual(response.data["overdue_tasks"], 1)
-        self.assertEqual(response.data["revenue_estimate"], "15000")
+        self.assertIsNone(response.data["revenue_estimate"])
+        self.assertEqual(response.data["operational_values"]["completed_services_estimate"], "15000")
+        self.assertEqual(response.data["financial"]["state"], "unavailable")
         self.assertEqual(response.data["leads_by_source"][0]["source"], Lead.Sources.WEBSITE)
         self.assertIn("business_pulse", response.data)
         self.assertIn("recommendations", response.data)
@@ -308,8 +310,10 @@ class OwnerDashboardAnalyticsTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["sales_events_count"], 1)
         self.assertEqual(response.data["data_quality"]["has_sales_data"], True)
-        self.assertEqual(response.data["business_pulse"]["tone"], "growth")
-        self.assertEqual(response.data["revenue"]["total_estimate"], "25000")
+        # An imported amount alone is not evidence of financial growth.
+        self.assertEqual(response.data["business_pulse"]["tone"], "setup")
+        self.assertIsNone(response.data["revenue"]["total_estimate"])
+        self.assertEqual(response.data["financial"]["reason"], "unsupported_source")
         self.assertEqual(response.data["latest_business_events"][0]["event_type"], "kaspi_sale_detected")
         self.assertEqual(response.data["connector_health"]["pending"], 1)
         self.assertTrue(response.data["setup"]["sources"]["sales_data"])
@@ -360,7 +364,14 @@ class OwnerDashboardAnalyticsTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["Content-Type"], "text/csv; charset=utf-8")
         self.assertIn("source,leads", response.content.decode())
+        self.assertIn("service_value_estimate", response.content.decode())
+        self.assertNotIn("revenue_estimate", response.content.decode())
         self.assertTrue(AuditLog.objects.filter(business=self.business, metadata__entity_type="analytics_report").exists())
+
+        retention = self.api.get("/api/analytics/reports/export/", {"business": self.business.id, "report": "retention_ltv"})
+        self.assertEqual(retention.status_code, 200)
+        self.assertIn("average_service_value_estimate", retention.content.decode())
+        self.assertNotIn("ltv_estimate", retention.content.decode())
 
     def test_scheduled_report_create_sets_actor(self):
         response = self.api.post(

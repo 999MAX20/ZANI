@@ -195,11 +195,11 @@ function PromptingSection({
 function ModelsSection({ bot, updateBot, canManage }: { bot: BotType; updateBot: ReturnType<typeof useMutation<BotType, Error, Partial<BotType>>>; canManage: boolean }) {
   const { t } = useI18n();
   const settings = bot.settings_json || {};
-  const [model, setModel] = useState(String(settings.model || "gpt-4.1"));
+  const [model, setModel] = useState(String(settings.model || ""));
   const [temperature, setTemperature] = useState(Number(settings.temperature ?? 0.4));
 
   useEffect(() => {
-    setModel(String(bot.settings_json?.model || "gpt-4.1"));
+    setModel(String(bot.settings_json?.model || ""));
     setTemperature(Number(bot.settings_json?.temperature ?? 0.4));
   }, [bot.id, bot.settings_json]);
 
@@ -214,6 +214,8 @@ function ModelsSection({ bot, updateBot, canManage }: { bot: BotType; updateBot:
             disabled={!canManage}
             onChange={(event) => setModel(event.target.value)}
             options={[
+              { value: "", label: t("aiQuality.configuredModel") },
+              ...(model && !["gpt-4.1", "gpt-4.1-mini", "gpt-4o-mini"].includes(model) ? [{ value: model, label: model }] : []),
               { value: "gpt-4.1", label: t("aiAgents.responseMode.quality") },
               { value: "gpt-4.1-mini", label: t("aiAgents.responseMode.fast") },
               { value: "gpt-4o-mini", label: t("aiAgents.responseMode.economy") },

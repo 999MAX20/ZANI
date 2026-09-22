@@ -608,6 +608,26 @@ Copy this section for every new confirmed precedent:
 - Derived audit rule:
 ```
 
+### ZD-014 — Live AI failure and source contracts were not explicit
+
+- Recorded: 2026-09-22. Type: AI/API/UI. Status: FIXED_BRANCH, candidate gate pending.
+- Surface: staff assistant, event analyst, bot suggestions and qualification.
+- Reproduction: reject a live provider request; return malformed source JSON;
+  use queued assistant response; ask about another doctor in the same conversation.
+- Expected: visible unavailable/no-data, only permitted source IDs, safe retry,
+  current requested specialist and handoff without automatic CRM mutations.
+- Actual: live failures could become mock text; UI assumed synchronous results;
+  source parsing trusted shapes; historical doctor mentions could win.
+- Correction: shared provider/grounding contracts, requester-scoped jobs, queued
+  UI/source chips, latest-inbound scheduling and existing-domain handoff.
+- Branch/base: codex/ui-testing-toolkit / 4f99927c. Exact candidate and verification:
+  [PRIMARY-SESSION](../docs/testing/task-state/PRIMARY-SESSION.md), local receipt
+  output/ai-quality-20260922/result.json. No secrets or real customer fixture.
+- Checks: focused suites and synthetic live GPT-4o API/UI; full gate pending.
+  Real channels/workers/deployment not claimed; source IDs do not prove semantics.
+- Derived rule: test live, unavailable, no-data, malformed source and queued paths
+  separately; changing a requested entity must invalidate the old selection.
+
 ## Maintenance Contract
 
 - Add an entry when a defect is confirmed, not after memory has faded.

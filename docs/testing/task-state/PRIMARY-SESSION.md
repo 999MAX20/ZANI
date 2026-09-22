@@ -2,6 +2,66 @@
 
 Дата: 2026-09-22. Это карточка исполнения, не продуктовый backlog.
 
+## Active: V1-A01/A02/A10 — AI quality, sources and recovery
+
+- Authorization: owner "приступай" after file/logic scope and request for broad
+  tests; small synthetic CRM fixtures and real OpenRouter requests authorized.
+- Mode implementation/verification; gap code/evidence. One phase: all three AI
+  surfaces use scoped facts, expose missing/invalid/provider-error states, and
+  recover without bypassing the completed staff-confirmation contract.
+- Owner primary 01a0c36e-33aa-7c72-be9b-72624dd2c739, single writer; canonical
+  C:\Users\user\Desktop\Zani, branch codex/ui-testing-toolkit, clean starting
+  HEAD/base 4f99927c25f44570a6686e1e092c8d7991f4ecda, registry idle.
+- Reuse ai_core provider/prompt/context/job/analyst layers, bot reply/lifecycle,
+  Inbox qualification, existing AI API/UI and tests. Fix observed gaps only.
+- Acceptance matrix: scoped staff answer + citations; analyst valid/malformed/
+  unknown sources/no-data; bot knowledge/settings/real scheduling context and
+  escalation; provider timeout/401/429/5xx/empty response with safe errors;
+  queue retry/replay; cross-business/role denial; CRM confirmations unchanged;
+  UI success/loading/error/recovery; a small real GPT-4o scenario set.
+- Permissions/tenant remain enforced; no new capabilities or financial claims.
+  Notifications/BusinessEvents reuse existing handoff/audit; no external sends.
+  Env: keep secrets ignored; no planned schema migration. Prefer disposable DB
+  for repeatable tests despite owner allowing small working-data fixtures.
+- Non-goals: agent-page redesign, new channels/public deployment, chairs,
+  billing/pricing policy, mass messaging, unrelated CRM work. Do not reopen
+  completed finance/scheduling/confirmation foundations without regression.
+- Required gates: isolated focused regressions, affected AI/bot/conversation/
+  permission/job suites and check/drift; frontend i18n/type/build; reachable
+  desktop/mobile UI/API; full candidate gate with this base, reviewed normal
+  push origin/main, readback and actual CI. Live checks separate from mocked CI.
+- Existing owned server: launcher 24872 / listener 26848, port8000, canonical
+  root, process-only synchronous AI. Verify identity before restarting; no
+  other process may be stopped. Evidence in output/openrouter-live-20260922.
+- Implementation ready for candidate gate: shared provider failures never become
+  live-looking mocks; bounded JSON/source validation; scoped job visibility and
+  execution-time permission refresh; UI accepts queued jobs and source chips.
+  Bot model/temperature validation, relevant knowledge, current-request schedule
+  and complaint/provider-failure handoff reuse existing domain services.
+- Focused evidence: 141 tests PASS (117.629s), then 55 PASS, then 78 PASS
+  (38.674s). Final small regression invocation had an invalid module label
+  apps.bots.tests_scheduling; its 23 quality tests passed, label error is not
+  an application failure. Full suite remains required after candidate commit.
+- Live OpenRouter/openai/gpt-4o: 8 API cases succeeded (staff price/tasks,
+  no financial data, malicious invented revenue, bot price/free slots,
+  analyst source, complaint qualification). Final extra checks: complaint
+  handoff + replay creates no CRM records or outbound; absent doctor has no
+  offered slot; analyst Russian output and server-owned navigation.
+- Browser manager desktop/mobile: queued loading, safe failed-response state,
+  retry recovery and CRM-summary source chip observed. JSON code fences from
+  GPT-4o are normalized before the same strict source validation. Last inbound
+  message takes priority when the client changes specialist.
+- Environment: isolated SQLite + loopback Vite/Django from canonical root,
+  Celery eager with memory broker/cache result backend. This does not verify
+  Redis/worker recovery, real channels, deployment or paid usage accounting.
+  Working DB and .env unchanged; no migrations. Limited lexical knowledge
+  retrieval and source-ID validation do not prove semantic hallucination-free
+  answers, RAG or arbitrary natural-language date/doctor matching.
+- Candidate/full gate/publication/CI pending. Receipt and exact commands:
+  output/ai-quality-20260922/{report.md,result.json,full-gate.log}; absence of
+  COMPLETE_PUBLISHED_CI_SUCCESS means unfinished. Next: reviewed candidate,
+  full gate, final cleanup/owned-server refresh, normal push and actual CI.
+
 ## V1-A03–A09 — подтверждение локально проверено; публикация по квитанции
 
 Code candidate `ade376c0be57a4073428721dbe6f2ea4d16e7310`, base

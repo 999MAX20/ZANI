@@ -1,8 +1,12 @@
 import { apiClient } from "./client";
+import { isAxiosError } from "axios";
 import { createCrudApi } from "./crud";
 import type { AgentProfile, ApprovalRequest, AIToolCallLog, AIToolSuggestResponse, BusinessKnowledgeItem, Id } from "../types";
+import { translate, getCurrentLanguage } from "../lib/i18n";
 
 export type AIAssistantChatResponse = {
+  sources: { id: string; label: string }[];
+  provider_state: "live" | "mock" | "no_data";
   answer: string;
   is_mock: boolean;
   provider: string;
@@ -19,7 +23,7 @@ export type AIAssistantChatResponse = {
 export type AIAssistantStatusResponse = {
   enabled: boolean;
   provider: string;
-  mode: "mock" | "live";
+  mode: "mock" | "live" | "unavailable";
   ready: boolean;
   key_configured: boolean;
   model: string;
@@ -59,12 +63,13 @@ export type AIAnalystAction = {
 };
 
 export type AIAnalystBriefResponse = {
+  provider_state: "live" | "mock" | "no_data" | "unavailable" | "invalid_response";
   generated_at: string;
   is_mock: boolean;
   provider: string;
   model: string;
   tokens_used: number;
-  log_id: Id;
+  log_id: Id | null;
   sources: AIAnalystSource[];
   insights: AIAnalystInsight[];
   actions: AIAnalystAction[];
@@ -116,6 +121,37 @@ export type AIOwnerDailyBriefResponse = {
   sources: AIOwnerBriefSource[];
 };
 
+type AIJob = { id: Id; status: string; result_json: AIAssistantChatResponse };
+const pendingChats = new Map<string, Id>();
+
+async function getChatJob(id: Id, key: string): Promise<AIJob> {
+  try {
+    return (await apiClient.get<AIJob>(`/api/ai/jobs/${id}/`)).data;
+  } catch (error) {
+    if (isAxiosError(error) && [403, 404].includes(error.response?.status ?? 0)) {
+      pendingChats.delete(key);
+    }
+    throw error;
+  }
+}
+
+async function waitForChat(job: AIJob, key: string): Promise<AIAssistantChatResponse> {
+  const deadline = Date.now() + 180_000;
+  while (Date.now() < deadline) {
+    if (job.status === "succeeded") {
+      pendingChats.delete(key);
+      return job.result_json;
+    }
+    if (job.status === "failed") {
+      pendingChats.delete(key);
+      throw new Error(translate(getCurrentLanguage(), "aiQuality.unavailable"));
+    }
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    job = await getChatJob(job.id, key);
+  }
+  throw new Error(translate(getCurrentLanguage(), "aiQuality.pending"));
+}
+
 export const aiApi = {
   assistantStatus: async (business: Id) => {
     const { data } = await apiClient.get<AIAssistantStatusResponse>("/api/ai/assistant/status/", {
@@ -124,11 +160,21 @@ export const aiApi = {
     return data;
   },
   assistantChat: async ({ business, message, prompt_type }: { business: Id; message: string; prompt_type?: string }) => {
-    const { data } = await apiClient.post<AIAssistantChatResponse>("/api/ai/assistant/chat/", {
+    const key = JSON.stringify([business, message, prompt_type]);
+    const existing = pendingChats.get(key);
+    if (existing) {
+      return waitForChat(await getChatJob(existing, key), key);
+    }
+    const { data } = await apiClient.post<AIAssistantChatResponse | { job: AIJob }>("/api/ai/assistant/chat/", {
       business,
       message,
       prompt_type,
-    });
+      idempotency_key: crypto.randomUUID(),
+    }, { timeout: 70_000 });
+    if ("job" in data) {
+      pendingChats.set(key, data.job.id);
+      return waitForChat(data.job, key);
+    }
     return data;
   },
   analystBrief: async ({ business, limit = 24 }: { business: Id; limit?: number }) => {

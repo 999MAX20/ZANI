@@ -1,6 +1,10 @@
 import { ru } from "./ru";
 
 export const kk: Record<string, string> = {
+  "aiQuality.unavailable": "ЖИ жауабы қолжетімсіз немесе тексеруден өтпеді. Қайталап көріңіз немесе жұмысты қолмен жалғастырыңыз.",
+  "aiQuality.pending": "Сұрау әлі өңделуде. Қайта басу сол сұраудың күйін тексереді.",
+  "aiQuality.mock": "Сынақ режимі: демонстрациялық нәтиже көрсетілген.",
+  "aiQuality.configuredModel": "Жүйе баптауларындағы модель",
   "workingHours.reviewAppointments": "Жазбаларды қарау",
   "workingHours.reassignOrReschedule": "Маманды ауыстыру / уақытын өзгерту",
   "workingHours.absenceCounts": "Қалған жазбалар: {count}. Клиенттер: {clients}.",

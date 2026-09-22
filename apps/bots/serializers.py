@@ -21,6 +21,10 @@ from apps.leads.models import Lead
 class BotSerializer(serializers.ModelSerializer):
     readiness = serializers.SerializerMethodField()
 
+    def validate_settings_json(self, value):
+        from apps.bots.ai_settings import validate_ai_settings
+        return validate_ai_settings(value)
+
     class Meta:
         model = Bot
         fields = [

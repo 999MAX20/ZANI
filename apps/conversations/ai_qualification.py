@@ -3,11 +3,13 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 import json
 import re
+import math
 from typing import Any
 
 from apps.ai_core.models import AIRequestLog
+from apps.ai_core.ai_client import AIClientError
 from apps.ai_core.services import run_ai_request
-from apps.bots.ai import build_bot_conversation_context
+from apps.bots.ai import build_bot_conversation_context, get_agent_profile
 from apps.bots.models import BotConversation
 from apps.services.models import Service
 
@@ -44,8 +46,10 @@ def qualify_conversation(*, conversation: BotConversation, user=None, allow_mock
     message_context = build_bot_conversation_context(conversation, limit=16)
     services = list(Service.objects.filter(business=conversation.business, is_active=True).order_by("name")[:30])
     service_catalog = [{"id": service.id, "name": service.name, "price_from": str(service.price_from or "")} for service in services]
+    profile = get_agent_profile(conversation)
     user_input = (
         "Квалифицируй входящий CRM-диалог и верни только JSON без markdown. "
+        "Учитывай настроенные escalation_rules: просьба поговорить с человеком всегда требует requires_human_review=true и intent=support. "
         "Нужно определить, какие CRM-действия предложить сотруднику. Заявка, задача и черновик сделки требуют подтверждения конкретного действия сотрудником. "
         "Схема JSON: {"
         '"intent":"appointment_request|price_question|purchase_interest|support|complaint|spam|other",'
@@ -84,12 +88,15 @@ def qualify_conversation(*, conversation: BotConversation, user=None, allow_mock
             "external_user_id": conversation.external_user_id,
             "messages": message_context,
             "services": service_catalog,
+            "escalation_rules": profile.escalation_rules_json if profile else {},
         },
         allow_mock=allow_mock,
         model_tier="smart",
     )
     qualification = _parse_qualification(result.output_text)
     if qualification is None:
+        if not result.is_mock:
+            raise AIClientError(code="invalid_qualification", retryable=False)
         qualification = _fallback_qualification(conversation=conversation, messages=message_context, services=services)
         qualification.reason = f"Fallback qualification used because AI output was not valid JSON. Provider={result.provider}."
     return qualification, log
@@ -110,6 +117,13 @@ def _parse_qualification(output_text: str) -> ConversationQualification | None:
         return None
     if not isinstance(payload, dict):
         return None
+    if payload.get("intent") not in {"appointment_request", "price_question", "purchase_interest", "support", "complaint", "spam", "other"}:
+        return None
+    if not isinstance(payload.get("summary"), str) or not payload['summary'].strip():
+        return None
+    for key in ("requires_human_review", "should_create_client", "should_create_lead", "should_create_task", "should_create_deal", "should_create_appointment"):
+        if key in payload and not isinstance(payload[key], bool):
+            return None
     return _qualification_from_payload(payload)
 
 
@@ -121,7 +135,9 @@ def _qualification_from_payload(payload: dict[str, Any]) -> ConversationQualific
     intent = str(payload.get("intent") or "other").strip() or "other"
     estimated_value = payload.get("estimated_value")
     try:
-        estimated_value = float(estimated_value) if estimated_value not in {None, ""} else None
+        estimated_value = float(estimated_value) if estimated_value is not None and estimated_value != "" else None
+        if estimated_value is not None and (not math.isfinite(estimated_value) or estimated_value < 0):
+            estimated_value = None
     except (TypeError, ValueError):
         estimated_value = None
     return ConversationQualification(
@@ -202,5 +218,7 @@ def _float_between(value, *, minimum: float, maximum: float, default: float) -> 
     try:
         number = float(value)
     except (TypeError, ValueError):
+        return default
+    if not math.isfinite(number):
         return default
     return max(minimum, min(maximum, number))

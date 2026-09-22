@@ -3,6 +3,7 @@ from apps.ai_core.services import run_ai_request
 from apps.bots.models import BotMessage
 from apps.bots.sales_playbooks import build_sales_playbook_context
 from apps.bots.scheduling_context import build_bot_scheduling_context
+from apps.bots.ai_settings import validate_ai_settings
 
 
 def build_bot_conversation_context(conversation, limit=12):
@@ -19,18 +20,22 @@ def build_bot_conversation_context(conversation, limit=12):
     ]
 
 
-def suggest_bot_reply(*, conversation, user=None, auto_mode=False, qualification=None):
-    message_context = build_bot_conversation_context(conversation)
-    scheduling_context = build_bot_scheduling_context(conversation, qualification=qualification) if auto_mode else {}
-    sales_playbook = build_sales_playbook_context(conversation.business) if auto_mode else {}
-    bot_settings = conversation.bot.settings_json if isinstance(conversation.bot.settings_json, dict) else {}
-    model = bot_settings.get("model") if isinstance(bot_settings.get("model"), str) else None
-    model_tier = bot_settings.get("model_tier") if isinstance(bot_settings.get("model_tier"), str) else None
-    temperature = _float_or_none(bot_settings.get("temperature"))
-    agent_profile = (
+def get_agent_profile(conversation):
+    return (
         AgentProfile.objects.filter(business=conversation.business, bot=conversation.bot, is_active=True).order_by("-updated_at").first()
         or AgentProfile.objects.filter(business=conversation.business, bot__isnull=True, is_active=True).order_by("-updated_at").first()
     )
+
+
+def suggest_bot_reply(*, conversation, user=None, auto_mode=False, qualification=None):
+    message_context = build_bot_conversation_context(conversation)
+    scheduling_context = build_bot_scheduling_context(conversation, qualification=qualification)
+    sales_playbook = build_sales_playbook_context(conversation.business) if auto_mode else {}
+    bot_settings = validate_ai_settings(conversation.bot.settings_json)
+    model = bot_settings.get("model") if isinstance(bot_settings.get("model"), str) else None
+    model_tier = bot_settings.get("model_tier") if isinstance(bot_settings.get("model_tier"), str) else None
+    temperature = _float_or_none(bot_settings.get("temperature"))
+    agent_profile = get_agent_profile(conversation)
     last_inbound = next(
         (message for message in reversed(message_context) if message["direction"] == BotMessage.Directions.INBOUND),
         None,
@@ -69,6 +74,7 @@ def suggest_bot_reply(*, conversation, user=None, auto_mode=False, qualification
         reply_instruction = "Generate a short, helpful CRM manager reply for this bot conversation. Do not send it automatically. "
 
     user_input = agent_instruction + reply_instruction + f"Last inbound message: {last_inbound['text'] if last_inbound else 'No inbound message'}"
+    user_input += " Prices in price_from are minimum prices: say 'от', not a guaranteed final price. Booking is performed by staff; never claim you booked, cancelled or transferred anything."
     crm_context = {}
     if conversation.client_id:
         crm_context["client"] = {
@@ -136,6 +142,7 @@ def suggest_bot_reply(*, conversation, user=None, auto_mode=False, qualification
                 "label": agent_payload["name"],
             }
         )
+    sources.extend({"type": "service", "id": service["id"], "label": service["name"]} for service in scheduling_context.get("services", []))
     sources.extend(
         {
             "type": "knowledge",

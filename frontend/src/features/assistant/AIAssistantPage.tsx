@@ -348,10 +348,10 @@ export function AIAssistantPage() {
           t("aiNavigator.prompt.dailySummary"),
           t("aiNavigator.prompt.factOnly"),
           t("aiNavigator.prompt.insufficientData"),
-          t("aiNavigator.prompt.workspaceFacts", { facts: JSON.stringify(navigatorData.factsForAi) }),
         ].join("\n"),
       });
     },
+    onMutate: () => setAiBrief(""),
     onSuccess: (response) => setAiBrief(response.answer),
   });
 
@@ -434,7 +434,7 @@ export function AIAssistantPage() {
   const providerLabel = aiStatus.data
     ? t("aiAssistant.providerStatus", {
         provider: aiStatus.data.provider,
-        mode: aiStatus.data.mode === "live" ? t("aiAssistant.modeLive") : t("aiAssistant.modeMock"),
+        mode: aiStatus.data.mode === "live" ? t("aiAssistant.modeLive") : aiStatus.data.mode === "mock" ? t("aiAssistant.modeMock") : t("aiQuality.unavailable"),
         model: aiStatus.data.model,
       })
     : t("aiAssistant.providerChecking");
@@ -523,6 +523,10 @@ export function AIAssistantPage() {
                 <div className="mt-5 rounded-card border border-ai-100 bg-ai-50 p-4">
                   <p className="text-xs font-bold uppercase tracking-[0.14em] text-ai-700">{t("aiNavigator.aiInterpretation")}</p>
                   <p className="mt-2 whitespace-pre-wrap text-sm font-semibold leading-7 text-zani-text">{aiBrief}</p>
+                  {briefMutation.data?.provider_state === "mock" ? <p className="mt-2 text-sm">{t("aiQuality.mock")}</p> : null}
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {(briefMutation.data?.sources || []).map((source) => <Badge key={source.id}>{source.label} [{source.id}]</Badge>)}
+                  </div>
                 </div>
               ) : null}
             </CardBody>
@@ -589,6 +593,10 @@ export function AIAssistantPage() {
               )}
 
               <div className="mt-5 grid gap-3">
+                {analystBrief.data && ["unavailable", "invalid_response"].includes(analystBrief.data.provider_state) ? (
+                  <StatusNotice tone="warning" title={t("aiQuality.unavailable")} />
+                ) : null}
+                {analystBrief.data?.provider_state === "mock" ? <StatusNotice tone="info" title={t("aiQuality.mock")} /> : null}
                 {suggestedActions.map((action) => {
                   const requiresApproval =
                     action.input_json.requires_confirmation === true;
@@ -717,7 +725,7 @@ export function AIAssistantPage() {
                     </div>
                   </div>
                 ))}
-                {canViewAnalyst && !analystBrief.isLoading && !(analystBrief.data?.insights || []).length ? (
+                {canViewAnalyst && !analystBrief.isLoading && analystBrief.data?.provider_state === "live" && !(analystBrief.data?.insights || []).length ? (
                   <p className="rounded-card bg-surface-muted p-4 text-sm font-semibold leading-6 text-zani-subtle">
                     {t("aiNavigator.emptyIntegrationInsights")}
                   </p>

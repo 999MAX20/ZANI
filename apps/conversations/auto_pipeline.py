@@ -7,8 +7,9 @@ from django.utils import timezone
 
 from apps.activities.services import create_activity_event
 from apps.ai_core.models import AgentProfile
+from apps.ai_core.ai_client import AIClientError
 from apps.bots.ai import suggest_bot_reply
-from apps.bots.inbox_service import send_outbound_message
+from apps.bots.inbox_service import send_outbound_message, handoff_conversation
 from apps.bots.lifecycle import conversation_ai_block_reason
 from apps.bots.models import BotChannel, BotConversation, BotMessage
 from apps.businesses.access import Resources
@@ -71,7 +72,15 @@ def maybe_run_auto_pipeline(*, conversation: BotConversation, message: BotMessag
         _write_decision_event(conversation, state_decision)
         return state_decision
 
-    qualification, ai_log = qualify_conversation(conversation=conversation, allow_mock=True)
+    try:
+        qualification, ai_log = qualify_conversation(conversation=conversation, allow_mock=True)
+    except AIClientError:
+        decision = AutoPipelineDecision(status="blocked_fallback", reason="AI unavailable; manager review required.")
+        if not conversation_ai_block_reason(conversation):
+            handoff_conversation(conversation, reason=decision.reason)
+        _save_auto_pipeline_decision(conversation, message, config, decision)
+        _write_decision_event(conversation, decision)
+        return decision
     # A provider call may outlive an owner pause, handoff or readiness change.
     state_decision = _guard_conversation_state(conversation)
     if state_decision is not None:
@@ -82,6 +91,7 @@ def maybe_run_auto_pipeline(*, conversation: BotConversation, message: BotMessag
     decision = _guard_auto_pipeline(config=config, conversation=conversation, message=message, qualification=qualification, ai_log_id=ai_log.id if ai_log else None)
     decision.confirmation_policy = _confirmation_policy(config)
     if decision.status in {"needs_review", "blocked_low_confidence", "blocked_risky_intent", "blocked_fallback"}:
+        handoff_conversation(conversation, reason=decision.reason)
         _save_auto_pipeline_decision(conversation, message, config, decision)
         _write_decision_event(conversation, decision)
         return decision
@@ -164,6 +174,10 @@ def _guard_auto_pipeline(
     qualification: ConversationQualification,
     ai_log_id: int | None,
 ) -> AutoPipelineDecision:
+    if qualification.intent in {"support", "complaint"}:
+        return AutoPipelineDecision(status="blocked_risky_intent", reason=f"Manager review required: {qualification.intent}.", qualification=qualification, ai_log_id=ai_log_id)
+    if qualification.requires_human_review and not _is_fallback(qualification) and not _can_continue_with_review_flag(config, qualification):
+        return AutoPipelineDecision(status="needs_review", reason="AI marked the conversation for human review.", qualification=qualification, ai_log_id=ai_log_id)
     if config.mode == "triage":
         return AutoPipelineDecision(status="qualified_only", reason="Triage mode stores qualification without CRM mutations.", qualification=qualification, ai_log_id=ai_log_id)
 
@@ -322,6 +336,8 @@ def _send_auto_reply(*, conversation: BotConversation, config: AutoPipelineConfi
             store_offered_slots(conversation=conversation, scheduling_context=scheduling_context, ai_log_id=log.id if log else None)
     except Exception as exc:
         decision.reply_error = sanitize_error_text(exc)
+        if not conversation_ai_block_reason(conversation):
+            handoff_conversation(conversation, reason="AI reply unavailable; manager review required.")
 
 
 def _auto_reply_meta(decision: AutoPipelineDecision) -> dict[str, Any] | None:

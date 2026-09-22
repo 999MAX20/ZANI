@@ -197,3 +197,47 @@ When using an external AI provider, log:
 - business/user scope.
 
 Do not log raw sensitive customer messages unless retention and privacy rules allow it.
+
+## V1 quality contract — 2026-09-22
+
+Staff chat/daily summary builds CRM context on the server with Business and role
+scoping. The browser does not supply authoritative facts. Current totals are
+separate from dates; up to eight records per category are samples, not complete
+history. Structured answers must cite only supplied source IDs or explicitly
+return no-data. A single JSON code fence is tolerated; unknown/mixed citations
+or malformed output are rejected. This validates provenance identifiers, not
+the semantic truth of every generated sentence.
+
+The event analyst uses permitted BusinessEvents, returns no-data without a paid
+call when sources are absent, rejects malformed/invented sources and uses
+server-owned navigation. It cannot infer verified financial results from events.
+Missing credentials, disabled AI and provider failures are unavailable states;
+only an explicitly selected mock provider returns mock-labelled output.
+Provider bodies, credentials and raw exception tracebacks are excluded from
+user errors. Transient failures use the existing bounded job retry policy;
+permanent rejection/invalid structured output stops retrying. Jobs are visible
+only to their requester, whose permissions/context are checked again on execution.
+The UI polls queued responses, preserves a pending job for a later retry and
+exposes a recoverable error instead of an obsolete answer.
+
+Bot replies use the active profile, validated model and finite temperature 0–1.
+An empty model selection inherits environment configuration. Known OpenAI model
+aliases are normalized for OpenRouter. Knowledge retrieval ranks up to 500 active
+business entries and supplies at most eight; this is bounded lexical retrieval,
+not full-corpus RAG. Scheduling uses active specialists and existing availability,
+working-hours, overlap and absence rules. The latest inbound request takes priority;
+name inflection matching is conservative and ambiguous cases need clarification.
+Only today/tomorrow/day-after-tomorrow keywords have explicit date handling here.
+Prices marked price_from are minimum prices. Replies must not claim a booking,
+transfer or cancellation has been executed; staff confirmation rules remain.
+
+Complaints, human-review requests and AI failures hand off through the existing
+conversation service with internal notifications and audit/activity. Incoming
+messages are preserved; no Lead/Task/Deal/appointment is created by this handoff.
+Pause/handoff/readiness checks still stop autonomous AI. This adds no spam archive
+policy or external notification campaign.
+
+Evidence and remaining acceptance boundaries belong to
+[the active checkpoint](../testing/task-state/PRIMARY-SESSION.md). Synthetic live
+OpenRouter tests do not prove channel delivery, production workers, universal
+answer accuracy or billing. The agent setup-page redesign remains separate.

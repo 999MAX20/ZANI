@@ -1,4 +1,8 @@
 export const ru: Record<string, string> = {
+  "aiQuality.unavailable": "Ответ ИИ недоступен или не прошёл проверку. Повторите запрос или продолжите работу вручную.",
+  "aiQuality.pending": "Запрос ещё обрабатывается. Повторное нажатие проверит тот же запрос.",
+  "aiQuality.mock": "Тестовый режим: показан демонстрационный результат.",
+  "aiQuality.configuredModel": "Модель из настроек системы",
   "workingHours.reviewAppointments": "Разобрать записи",
   "workingHours.reassignOrReschedule": "Заменить специалиста / перенести",
   "workingHours.absenceCounts": "Осталось записей: {count}. Клиентов: {clients}.",

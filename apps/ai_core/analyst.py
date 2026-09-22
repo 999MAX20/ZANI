@@ -6,7 +6,8 @@ from django.utils import timezone
 
 from apps.ai_core.models import AIRequestLog
 from apps.ai_core.services import run_ai_request
-from apps.businesses.access import Actions, Resources, can
+from apps.ai_core.ai_client import AIClientError
+from apps.businesses.access import Actions, Resources, can, scope_queryset
 from apps.integrations.models import BusinessEvent
 
 SENSITIVE_PAYLOAD_KEYS = {
@@ -30,8 +31,8 @@ def build_business_event_sources(business, *, user=None, limit=24):
     if not _can_read_business_events(user, business):
         return []
     events = (
-        BusinessEvent.objects.select_related("connector")
-        .filter(business=business)
+        scope_queryset(BusinessEvent.objects.select_related("connector").filter(business=business),
+                       user, business, Resources.INTEGRATIONS, Actions.VIEW)
         .order_by("-occurred_at", "-created_at")[:limit]
     )
     return [_event_source(event) for event in events]
@@ -39,8 +40,12 @@ def build_business_event_sources(business, *, user=None, limit=24):
 
 def build_event_analyst_brief(*, business, user=None, limit=24):
     sources = build_business_event_sources(business, user=user, limit=limit)
+    if not sources:
+        return _unavailable_brief(sources, "no_data")
+    language = getattr(getattr(user, "preferences", None), "language", "ru")
+    response_language = {"ru": "Russian", "kk": "Kazakh", "en": "English"}.get(language, "Russian")
     user_input = (
-        "Ты AI Analyst для CRM ZANI. Проанализируй BusinessEvent текущего бизнеса. "
+        f"Ты AI Analyst для CRM ZANI. Проанализируй BusinessEvent текущего бизнеса. Язык всех заголовков, описаний и выводов: {response_language}. "
         "Верни только JSON без markdown. Формат: "
         '{"insights":[{"id":"short_id","severity":"critical|warning|info|good","title":"...","summary":"...",'
         '"source_ids":["BE-1"]}],"actions":[{"id":"short_id","priority":"high|medium|low","label":"...",'
@@ -51,6 +56,13 @@ def build_event_analyst_brief(*, business, user=None, limit=24):
         "Не делай выводы о поступлениях, возвратах, выручке или прибыли по BusinessEvent. "
         "Финансовые показатели доступны только в отчёте из проверенного учётного источника."
     )
+    try:
+        return _generate_brief(business, user, sources, user_input)
+    except AIClientError:
+        return _unavailable_brief(sources, "unavailable")
+
+
+def _generate_brief(business, user, sources, user_input):
     result, log = run_ai_request(
         business=business,
         user=user,
@@ -68,8 +80,10 @@ def build_event_analyst_brief(*, business, user=None, limit=24):
         model_tier="smart",
     )
     parsed = _parse_analyst_json(result.output_text, sources)
-    if parsed is None:
+    if result.is_mock:
         parsed = _fallback_analyst_output(sources)
+    elif parsed is None:
+        return _unavailable_brief(sources, "invalid_response")
 
     return {
         "generated_at": timezone.now().isoformat(),
@@ -81,7 +95,17 @@ def build_event_analyst_brief(*, business, user=None, limit=24):
         "sources": sources,
         "insights": parsed["insights"],
         "actions": parsed["actions"],
-        "raw_answer": result.output_text,
+        "raw_answer": "",
+        "provider_state": "mock" if result.is_mock else "live",
+    }
+
+
+def _unavailable_brief(sources, state):
+    return {
+        "generated_at": timezone.now().isoformat(), "is_mock": False,
+        "provider": "", "model": "", "tokens_used": 0, "log_id": None,
+        "provider_state": state, "sources": sources, "raw_answer": "",
+        "insights": [], "actions": [],
     }
 
 
@@ -160,6 +184,14 @@ def _parse_analyst_json(text, sources):
         except json.JSONDecodeError:
             return None
 
+    if not isinstance(payload, dict) or not isinstance(payload.get("insights"), list) or not isinstance(payload.get("actions"), list):
+        return None
+    # Reject the entire response rather than quietly dropping invented sources.
+    for item in payload['insights'] + payload['actions']:
+        if not isinstance(item, dict) or not _valid_source_ids(item.get('source_ids'), source_ids):
+            return None
+        if any(key in item and not isinstance(item[key], str) for key in ("id", "severity", "priority", "title", "summary", "label", "description", "href")):
+            return None
     insights = [
         _normalize_insight(item, source_ids, index)
         for index, item in enumerate(payload.get("insights", []), start=1)
@@ -196,11 +228,8 @@ def _normalize_action(item, source_ids, index):
     if not cited:
         return None
     priority = item.get("priority") if item.get("priority") in {"high", "medium", "low"} else "medium"
-    href = str(item.get("href") or "/app/integrations")
-    if href.startswith("/dashboard"):
-        href = href.replace("/dashboard", "/app", 1)
-    if not href.startswith("/app"):
-        href = "/app/integrations"
+    # This analyst reads integration events. Navigation is server-owned, not an LLM URL.
+    href = "/app/integrations"
     return {
         "id": str(item.get("id") or f"action_{index}")[:64],
         "priority": priority,
@@ -212,7 +241,7 @@ def _normalize_action(item, source_ids, index):
 
 
 def _valid_source_ids(value, source_ids):
-    if not isinstance(value, list):
+    if not isinstance(value, list) or any(not isinstance(item, str) or item not in source_ids for item in value):
         return []
     return [item for item in value if item in source_ids][:5]
 

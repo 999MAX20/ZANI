@@ -45,14 +45,14 @@ class AgentProfileSerializer(serializers.ModelSerializer):
 class AIAssistantChatSerializer(serializers.Serializer):
     business = serializers.PrimaryKeyRelatedField(queryset=Business.objects.all())
     message = serializers.CharField(required=True, allow_blank=False)
-    prompt_type = serializers.CharField(required=False, default="crm_assistant")
+    prompt_type = serializers.ChoiceField(choices=["crm_assistant", "daily_summary"], required=False, default="crm_assistant")
     idempotency_key = serializers.CharField(required=False, max_length=160)
 
 
 class AIJobSerializer(serializers.ModelSerializer):
     class Meta:
         model = AIJob
-        fields = "__all__"
+        fields = ["id", "business", "status", "attempts", "max_attempts", "next_retry_at", "result_json", "error", "created_at", "completed_at"]
         read_only_fields = [field.name for field in AIJob._meta.fields]
 
 

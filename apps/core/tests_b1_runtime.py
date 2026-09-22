@@ -8,6 +8,7 @@ from rest_framework.test import APIClient
 from apps.accounts.models import User
 from apps.ai_core.models import AIJob, AIRequestLog, AIToolCallLog, ApprovalRequest
 from apps.ai_core.services import process_ai_job
+from apps.ai_core.ai_client import AIClientResult
 from apps.automations.engine import process_due_automation_runs, recover_stale_automation_runs, run_automations_for_event
 from apps.automations.models import AutomationAction, AutomationRule, AutomationRun
 from apps.businesses.models import Business, BusinessMember
@@ -241,7 +242,7 @@ class B1RuntimeReliabilityTests(TestCase):
             source=AIRequestLog.Sources.CRM,
             prompt_type="crm_assistant",
         )
-        result = SimpleNamespace(output_text="Done", provider="openai", model="test", tokens_used=3)
+        result = AIClientResult(output_text="Done", provider="openai", model="test", tokens_used=3)
         with patch("apps.ai_core.services.run_ai_request", return_value=(result, log)) as runner:
             process_ai_job(job.id)
             process_ai_job(job.id)

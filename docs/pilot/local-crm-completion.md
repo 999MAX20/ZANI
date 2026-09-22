@@ -209,6 +209,13 @@ website chat контакта до ИИ; legacy modes лишь предлага�
 [primary checkpoint](../testing/task-state/PRIMARY-SESSION.md). Этот пакет не
 закрывает качество трёх AI-направлений, live provider или подключение каналов.
 
+Дополнение V1-A01/A02/A10: реализованы проверка source IDs, явные no-data/
+unavailable/invalid-response состояния, безопасные provider errors, scoped job
+polling/retry и передача сложного диалога сотруднику. Выполнен небольшой live
+набор OpenRouter GPT-4o на синтетической стоматологии; итоговый gate/push/CI
+отслеживает [checkpoint](../testing/task-state/PRIMARY-SESSION.md). Это не общий
+допуск клиники, не подключение каналов и не гарантия точности любого ответа.
+
 **Есть:** [assistant/context](../../apps/ai_core/assistant.py),
 [analyst](../../apps/ai_core/analyst.py), [tool registry](../../apps/ai_core/tool_registry.py),
 [provider adapters](../../apps/ai_core/providers/registry.py), bot readiness/lifecycle,
@@ -233,8 +240,8 @@ event analyst читает BusinessEvent; manual payments не создаёт н
 аналитик ссылается на разрешённые реальные источники или сообщает о нехватке данных.
 Чужие/закрытые для роли сущности не попадают в ответ. Пауза/сбой ИИ не ломает CRM
 и допустимый inbound. Проверить replay/approval/no-data/provider failure и live
-результат всех трёх направлений. Источник тестового общения, provider/model и
-разрешённые расходы/данные ещё согласуются; сейчас вызовов нет.
+результат всех трёх направлений. Владелец разрешил ограниченные синтетические данные и live OpenRouter GPT-4o.
+Рабочая БД не менялась; real worker/channel и billing acceptance остаются отдельно.
 
 ### 6. Живые WhatsApp и Instagram
 

@@ -231,7 +231,7 @@ class AICoreFoundationTests(TestCase):
         self.assertEqual(response.data["model"], "kimi-k2.6")
 
     @override_settings(AI_ENABLED=True, AI_PROVIDER="kimi", KIMI_API_KEY="", AI_SMART_MODEL="kimi-k2.6")
-    def test_ai_assistant_status_reports_missing_key_as_mock_mode(self):
+    def test_ai_assistant_status_reports_missing_key_as_unavailable(self):
         self.api.force_authenticate(self.owner)
 
         response = self.api.get("/api/ai/assistant/status/", {"business": self.business.id})
@@ -239,7 +239,7 @@ class AICoreFoundationTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertFalse(response.data["ready"])
         self.assertEqual(response.data["provider"], "kimi")
-        self.assertEqual(response.data["mode"], "mock")
+        self.assertEqual(response.data["mode"], "unavailable")
 
     @override_settings(AI_PROVIDER="mock", OPENAI_API_KEY="", OPENROUTER_API_KEY="", KIMI_API_KEY="")
     def test_ai_assistant_chat_rejects_foreign_business(self):
@@ -308,9 +308,10 @@ class AICoreFoundationTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["sources"], [])
-        self.assertEqual(response.data["insights"][0]["id"], "no_business_events")
-        self.assertEqual(response.data["insights"][0]["source_ids"], [])
-        self.assertEqual(response.data["actions"][0]["source_ids"], [])
+        self.assertEqual(response.data["provider_state"], "no_data")
+        self.assertEqual(response.data["insights"], [])
+        self.assertEqual(response.data["actions"], [])
+        self.assertFalse(AIRequestLog.objects.exists())
 
     @override_settings(AI_PROVIDER="mock", OPENAI_API_KEY="", OPENROUTER_API_KEY="", KIMI_API_KEY="")
     def test_ai_analyst_brief_does_not_read_business_events_without_integration_view(self):
@@ -344,12 +345,11 @@ class AICoreFoundationTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["sources"], [])
-        self.assertEqual(response.data["insights"][0]["source_ids"], [])
+        self.assertEqual(response.data["insights"], [])
+        self.assertEqual(response.data["provider_state"], "no_data")
         self.assertNotIn(f"BE-{hidden_event.id}", str(response.data))
         self.assertNotIn("Hidden analyst order", str(response.data))
-        log = AIRequestLog.objects.get(prompt_type="business_event_analyst")
-        self.assertEqual(log.input_json["business_event_sources"], [])
-        self.assertNotIn("Hidden analyst order", str(log.input_json))
+        self.assertFalse(AIRequestLog.objects.filter(prompt_type="business_event_analyst").exists())
 
     def test_ai_owner_daily_brief_returns_source_grounded_next_best_actions(self):
         now = timezone.now()

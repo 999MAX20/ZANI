@@ -53,6 +53,9 @@ class AIJobViewSet(TenantModelViewSet):
     access_resource = Resources.AI_ASSISTANT
     http_method_names = ["get", "head", "options"]
 
+    def get_queryset(self):
+        return super().get_queryset().filter(user=self.request.user)
+
 
 class BusinessKnowledgeItemViewSet(TenantModelViewSet):
     queryset = BusinessKnowledgeItem.objects.select_related("business")
@@ -198,6 +201,8 @@ class AIAssistantChatView(APIView):
                 "tokens_used": result.tokens_used,
                 "log_id": log.id,
                 "context": crm_context["summary"],
+                "sources": result.sources,
+                "provider_state": result.provider_state,
             }
         )
 
@@ -222,7 +227,7 @@ class AIAssistantStatusView(APIView):
             "openai": bool(settings.OPENAI_API_KEY),
         }
         key_ready = provider == "mock" or configured_keys.get(provider, False)
-        mode = "mock" if provider == "mock" or not key_ready or not settings.AI_ENABLED else "live"
+        mode = "unavailable" if not settings.AI_ENABLED or not key_ready else "mock" if provider == "mock" else "live"
         return Response(
             {
                 "enabled": settings.AI_ENABLED,

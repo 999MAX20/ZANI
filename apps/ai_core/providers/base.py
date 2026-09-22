@@ -2,7 +2,10 @@ from dataclasses import dataclass
 
 
 class AIProviderError(Exception):
-    pass
+    def __init__(self, message="AI provider is unavailable.", *, code="provider_unavailable", retryable=True):
+        super().__init__(message)
+        self.code = code
+        self.retryable = retryable
 
 
 @dataclass(frozen=True)

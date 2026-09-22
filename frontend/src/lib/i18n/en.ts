@@ -1,6 +1,10 @@
 import { ru } from "./ru";
 
 export const en: Record<string, string> = {
+  "aiQuality.unavailable": "The AI answer is unavailable or could not be verified. Retry or continue manually.",
+  "aiQuality.pending": "The request is still processing. Trying again will check the same request.",
+  "aiQuality.mock": "Test mode: this is a demonstration result.",
+  "aiQuality.configuredModel": "System-configured model",
   "workingHours.reviewAppointments": "Review appointments",
   "workingHours.reassignOrReschedule": "Replace specialist / reschedule",
   "workingHours.absenceCounts": "Appointments remaining: {count}. Clients: {clients}.",

@@ -2,15 +2,18 @@
 
 ## Действующее правило continuity — уточнение владельца 2026-09-21
 
-Локально проверен пакет 2026-09-22: V1-M01/M02 — «Ручной учёт» отдельно; общая финансовая
-аналитика только из проверенного подключённого источника, без ложного нуля и с
-сохранением доступного прошлого снимка при сбое. Владелец утвердил через
-Оркестратор; scope/DoD/base — в PRIMARY-SESSION. Конкретный financial connector,
-live подключение, SaaS billing, scheduling и рабочие миграции не входят.
-Full gate PASS на `cc7050e`; окончательная публикация/readback/actual CI —
-`output/v1-finance-source-20260922/result.json`, commands/skips — соседний report.md.
-Пока квитанция не COMPLETE_PUBLISHED_CI_SUCCESS, следующий пакет не начинать.
-После завершения этого scope остановиться; новая фаза требует указания владельца.
+Локально проверен текущий пакет 2026-09-22: V1-A03–A09 — подтверждение действий
+ИИ сотрудником. Inbox preview → выбор Lead/Task/Deal → подтверждение; legacy
+режимы и website chat intake не обходят подтверждение. Запись остаётся ручной.
+Full gate PASS на `ade376c`; desktop/mobile cancel/replay/stale/recovery PASS.
+Точный scope, commands/skips и остаток — в PRIMARY-SESSION; конечная публикация,
+readback и actual CI — `output/ai-confirmation-20260922/result.json`.
+До COMPLETE_PUBLISHED_CI_SUCCESS этот пакет не закрывать; после квитанции
+остановиться. Live AI/каналы, качество ответов/grounding и billing не приняты
+этим пакетом и автоматически не начинаются. Рабочая БД не затрагивалась.
+
+Предыдущий финансовый V1-M01/M02 завершён: `8b41489`, normal push/readback и
+CI success по `output/v1-finance-source-20260922/result.json`; не переоткрывать.
 Scheduling завершён на `5821941` с push/readback/CI; его pending checkpoints ниже
 исторические. Не повторять эту фазу или предыдущие W05/W06/Git.
 

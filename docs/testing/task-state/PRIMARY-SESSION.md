@@ -2,7 +2,33 @@
 
 Дата: 2026-09-22. Это карточка исполнения, не продуктовый backlog.
 
-## V1-A03–A09 — единое подтверждение AI-действий, IN PROGRESS
+## V1-A03–A09 — подтверждение локально проверено; публикация по квитанции
+
+Code candidate `ade376c0be57a4073428721dbe6f2ea4d16e7310`, base
+`8b41489f96f2c9d7a5cbc85bca560eae860e6ee9`; canonical root и branch прежние.
+Full gate PASS: `.\.venv\Scripts\python.exe -X utf8 scripts/codex_verify.py --mode full --base-ref 8b41489f96f2c9d7a5cbc85bca560eae860e6ee9`.
+1128 Django tests / 1339.085s; migration drift/system check, npm ci,
+RU/KK/EN 4976 keys/type/app/widget builds, bundle budget, 2 mobile smoke / 1.8m,
+Python lock installability и Python/npm audits PASS. Working tree clean на candidate.
+
+CUA final desktop/mobile 390x844: preview, cancel, task-only creation/replay,
+new inbound invalidates open proposal, clear localized error and recovery through
+new preview PASS. API readback: одна задача этого диалога, без Lead/Deal;
+`output/ai-confirmation-20260922/browser-result-final.json`. Свои серверы/изолированная
+БД закрыты, tab закрыт, viewport reset. Permissions/tenant проверены backend suites.
+
+Этот closeout меняет только docs; application inputs равны проверенному candidate.
+Normal push origin/main/readback и actual CI записываются в
+`output/ai-confirmation-20260922/result.json`; точные commands/failures/skips/review —
+в соседнем `report.md`, полный вывод — `full-gate.log`. До статуса
+COMPLETE_PUBLISHED_CI_SUCCESS публикация/CI не считаются выполненными.
+После квитанции завершена только эта фаза подтверждения, остановиться.
+Следующее незавершённое: качество/источники/сбои трёх AI-направлений и live
+приёмка, затем разрешённое подключение каналов; автоматически не начинать.
+Не проверялись real AI/channels, billing, deploy, working DB migrations — вне scope.
+
+Ниже исходный контракт и промежуточные checkpoints; их pending формулировки
+исторические и не переоткрывают пройденные проверки.
 
 - Авторизация: «приступай» после разбора кода и предложения первым закрыть
   единые правила действий ИИ. Mode implementation; gap code/policy conformity

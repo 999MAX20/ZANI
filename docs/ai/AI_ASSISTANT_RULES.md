@@ -10,7 +10,7 @@ neither a financial AI report nor live provider calls.
 
 This document defines what ZANI AI features may do, what they must not do, and how they should use business data.
 
-## V1 action confirmation — implementation candidate, 2026-09-22
+## V1 action confirmation — locally verified, 2026-09-22
 
 Legacy `auto_lead_task`, `draft_deal`, `appointment_explicit` and mode-based
 settings now propose CRM work. The automatic conversation pipeline may associate

@@ -2,7 +2,29 @@
 
 Дата: 2026-09-22. Это карточка исполнения, не продуктовый backlog.
 
-## Активный пакет V1-M01/M02 — ручной учёт отдельно, проверенный финансовый источник
+## V1-M01/M02 — локально проверено; публикация по конечной квитанции
+
+Code candidate `cc7050eb8f1ac5b59a56ff4ae922f6eb17aebadd`, base `5821941`.
+Полный gate PASS: `.\.venv\Scripts\python.exe -X utf8 scripts/codex_verify.py --mode full --base-ref 5821941880f1ed26aa1e34e34e155de1f326b813`.
+1117 Django tests / 994.257s, migration drift/system check, npm ci, i18n/type,
+app/widget builds, bundle budget, 2 mobile owner/manager smoke и Python/npm audits
+PASS. Canonical root/branch/owner прежние, рабочая папка чистая после code commit.
+Следующий commit только обновляет эти docs; application inputs не изменяются.
+
+Публикация normal push origin/main, точный remote readback и фактический CI
+фиксируются в `output/v1-finance-source-20260922/result.json`; подробные commands,
+failures/skips и review — в `report.md` той же папки. До конечной квитанции
+COMPLETE_PUBLISHED_CI_SUCCESS публикация/CI не считаются выполненными.
+Ниже — исходный контракт и промежуточные checkpoints; их pending формулировки
+не переоткрывают пройденные проверки. После публикации остановиться в этом scope.
+
+Ограничения: production financial readers отсутствуют; проверенный конкретный
+провайдер не добавлен. Положительные состояния доказаны isolated API/UI fixtures.
+Рабочая БД, live channels/AI/accounting, billing, deploy не затрагивались.
+Два старых optional daily-workspaces policy FAIL воспроизведены на base, не
+ослаблены; обязательный full gate и текущие flows PASS. Авто-проверка запретила
+удаление одной остаточной тестовой temp-папки (`blocked by policy`); она оставлена.
+Исправленная очистка собственных тестовых процессов отдельно прошла проверку.
 
 - Owner authorization через Оркестратор 2026-09-22: «да» на отдельный ручной
   журнал и финансовые показатели общей аналитики только из проверенной

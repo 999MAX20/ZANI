@@ -67,7 +67,7 @@ class OpenAICompatibleProvider(BaseAIProvider):
             retryable = exc.code in {408, 429} or exc.code >= 500
             code = "rate_limited" if exc.code == 429 else "provider_unavailable" if retryable else "provider_rejected"
             raise AIProviderError("AI provider could not complete the request.", code=code, retryable=retryable) from None
-        except (error.URLError, TimeoutError, json.JSONDecodeError) as exc:
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError):
             raise AIProviderError("AI provider could not complete the request.") from None
 
         if not isinstance(data, dict):
@@ -76,7 +76,8 @@ class OpenAICompatibleProvider(BaseAIProvider):
         if not isinstance(choices, list) or not choices or not isinstance(choices[0], dict):
             raise AIProviderError("AI provider returned an empty response.", code="invalid_response", retryable=False)
         message = choices[0].get("message", {}) if choices else {}
-        if not isinstance(message, dict) or choices[0].get("finish_reason") in {"length", "content_filter"}:
+        finish_reason = choices[0].get("finish_reason")
+        if not isinstance(message, dict) or (finish_reason is not None and not isinstance(finish_reason, str)) or finish_reason in {"length", "content_filter"}:
             raise AIProviderError("AI provider returned an incomplete response.", code="invalid_response", retryable=False)
         output_text = _message_content_to_text(message.get("content"))
         if not output_text.strip():

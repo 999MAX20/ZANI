@@ -43,7 +43,7 @@ class ProviderQualityTests(SimpleTestCase):
                 self.assertNotIn('synthetic-secret', str(caught.exception))
 
     def test_invalid_empty_truncated_responses_are_rejected(self):
-        for payload in ([], {}, {'choices': []}, {'choices': [{'message': {'content': ''}}]}, {'choices': [{'finish_reason': 'length', 'message': {'content': 'half'}}]}):
+        for payload in ([], {}, {'choices': []}, {'choices': [{'message': {'content': ''}}]}, {'choices': [{'finish_reason': 'length', 'message': {'content': 'half'}}]}, {'choices': [{'finish_reason': {}, 'message': {'content': 'invalid'}}]}):
             with self.subTest(payload=payload):
                 response = MagicMock()
                 response.__enter__.return_value.read.return_value = json.dumps(payload).encode()

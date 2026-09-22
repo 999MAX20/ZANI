@@ -57,6 +57,14 @@
   Working DB and .env unchanged; no migrations. Limited lexical knowledge
   retrieval and source-ID validation do not prove semantic hallucination-free
   answers, RAG or arbitrary natural-language date/doctor matching.
+- First full gate on c2c5e6a: Django drift/check and 1151 tests PASS
+  (894.463s); npm ci failed EPERM because the owned live Vite held its native
+  binding on Windows. Close owned live runtime before install; no baseline
+  application failure claimed. Final review additionally hardened malformed
+  provider finish_reason and transport/encoding errors; repeat full gate on
+  the updated candidate, not reuse an obsolete application snapshot.
+- Browser cleanup: temporary viewport reset and tab closed; synthetic runtime
+  stop requested. Usage receipt excludes rejected outputs, is not billing.
 - Candidate/full gate/publication/CI pending. Receipt and exact commands:
   output/ai-quality-20260922/{report.md,result.json,full-gate.log}; absence of
   COMPLETE_PUBLISHED_CI_SUCCESS means unfinished. Next: reviewed candidate,

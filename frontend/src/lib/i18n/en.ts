@@ -5653,6 +5653,7 @@ export const en: Record<string, string> = {
   "conversations.pipelineCreated.lead": "lead",
   "conversations.pipelineCreated.task": "task",
   "conversations.pipelineCreated.deal": "draft deal",
+  "conversations.pipelinePreviewExpired": "The AI proposal is out of date or has changed. Close this window and select Preview to review the conversation again.",
   "conversations.confirmPipelineTitle": "Confirm AI actions",
   "conversations.confirmPipelineActions": "Select actions for this request",
   "conversations.confirmPipeline.create_lead": "Create lead",

@@ -5676,6 +5676,7 @@ export const ru: Record<string, string> = {
   "conversations.pipelineCreated.lead": "заявка",
   "conversations.pipelineCreated.task": "задача",
   "conversations.pipelineCreated.deal": "черновик сделки",
+  "conversations.pipelinePreviewExpired": "Предложение ИИ устарело или изменилось. Закройте это окно и нажмите «Оценить», чтобы проверить диалог заново.",
   "conversations.confirmPipelineTitle": "Подтвердить действия ИИ",
   "conversations.confirmPipelineActions": "Выберите действия для этого обращения",
   "conversations.confirmPipeline.create_lead": "Создать заявку",

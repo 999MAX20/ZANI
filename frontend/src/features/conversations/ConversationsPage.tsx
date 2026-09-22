@@ -28,7 +28,7 @@ import {
   useSearchParams,
 } from "react-router";
 
-import { getApiErrorMessage } from "../../api/client";
+import { getApiErrorMessage, getApiFieldErrors } from "../../api/client";
 import { botsApi } from "../../api/bots";
 import { clientsApi } from "../../api/clients";
 import { businessConnectorsApi } from "../../api/connectors";
@@ -1061,10 +1061,15 @@ export function ConversationsPage() {
         queryClient.invalidateQueries({ queryKey: ["tasks"] }),
       ]);
     },
-    onError: (error) =>
-      notifyError(error, {
-        fallbackMessage: t("conversations.aiPipelineRunForbidden"),
-      }),
+    onError: (error) => {
+      if (getApiFieldErrors(error).preview_id) {
+        setNotice(t("conversations.pipelinePreviewExpired"), "warning");
+      } else {
+        notifyError(error, {
+          fallbackMessage: t("conversations.aiPipelineRunForbidden"),
+        });
+      }
+    },
   });
 
   const bulkMutation = useMutation({
@@ -1886,7 +1891,8 @@ export function ConversationsPage() {
 
       {pipelineReview ? <PipelineConfirmationDialog key={`${pipelineReview.conversationId}:${pipelineReview.previewId}`}
         review={pipelineReview} allowedActions={pipelineAllowedActions} pending={runPipelineMutation.isPending}
-        error={runPipelineMutation.error ? getApiErrorMessage(runPipelineMutation.error) : null}
+        error={runPipelineMutation.error ? (getApiFieldErrors(runPipelineMutation.error).preview_id
+          ? t("conversations.pipelinePreviewExpired") : getApiErrorMessage(runPipelineMutation.error)) : null}
         onClose={() => setPipelineReview(null)} onConfirm={(confirmation) => runPipelineMutation.mutate(confirmation)} /> : null}
 
       <Dialog

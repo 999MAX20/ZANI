@@ -61,6 +61,11 @@
   task, no lead/deal. `output/ai-confirmation-20260922/browser-result.json` records
   boundary: backend preceded final event/preview race delta. Owned servers
   stopped and isolated runtime cleaned. Final candidate browser recheck remains.
+- Browser candidate delta: stale preview was correctly rejected but UI displayed
+  generic validation. Fixed explicit RU/KK/EN recovery text using preview_id field
+  errors; CUA mobile confirms error and new-preview recovery. First full run on
+  2045f32 interrupted during backend for this UI fix (not a PASS/FAIL result).
+  Owned gate processes confirmed stopped. Restart full on corrected candidate.
 - Next: reviewed candidate commit then full gate against the true starting base;
   final browser, exact evidence/docs, normal push/readback and actual CI.
   No migrations on working DB, providers/live channels, billing or next phase.

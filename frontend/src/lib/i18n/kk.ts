@@ -5685,6 +5685,7 @@ export const kk: Record<string, string> = {
   "conversations.pipelineCreated.lead": "өтінім",
   "conversations.pipelineCreated.task": "тапсырма",
   "conversations.pipelineCreated.deal": "мәміле жобасы",
+  "conversations.pipelinePreviewExpired": "ЖИ ұсынысы ескірді немесе өзгерді. Терезені жауып, диалогты қайта тексеру үшін «Бағалау» түймесін басыңыз.",
   "conversations.confirmPipelineTitle": "ЖИ әрекеттерін растау",
   "conversations.confirmPipelineActions": "Осы өтінішке арналған әрекеттерді таңдаңыз",
   "conversations.confirmPipeline.create_lead": "Өтінім жасау",

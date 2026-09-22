@@ -4,6 +4,43 @@
 
 ## Active: V1-A01/A02/A10 — AI quality, sources and recovery
 
+### Paused by owner — 2026-09-22, resume tomorrow
+
+Owner: «зафиксируй выполненные задачи; продолжим завтра». Stop implementation
+and publication now; no phase completion or automatic continuation authorized.
+Canonical root/branch unchanged. Code committed locally as c2c5e6a and
+26d0ad8bbb6356f4221b7888b9739976ac721bf1; remote main readback remains
+4f99927c25f44570a6686e1e092c8d7991f4ecda. No push for this package.
+
+Latest full command:
+`.venv\Scripts\python.exe -X utf8 scripts/codex_verify.py --mode full --base-ref 4f99927c25f44570a6686e1e092c8d7991f4ecda`
+Evidence `output/ai-quality-20260922/full-gate.log` on 26d0ad8:
+- PASS: drift/system check, 1151 Django tests / 944.729s;
+- PASS: npm ci, Vite env isolation, 4980 RU/KK/EN keys, types, app/widget builds,
+  bundle budget, 2 mobile role smoke / 1.4m;
+- PASS: Python application and verification-tool lock installability;
+- INTERRUPTED: Python dependency audit exited 1073807364; no vulnerability
+  conclusion available. Frontend dependency audit/final hygiene not reached.
+  Full gate is incomplete, not green. No remaining owned gate/provider process.
+
+Live GPT-4o and manual desktop/mobile results below are preserved. Disposable
+live DB removed, owned test servers and browser tab closed, viewport reset.
+Requested ordinary backend intentionally remains on http://127.0.0.1:8000,
+health200, code26d0ad8; launcher31564/listener27528 (reverify before touching).
+Working DB and .env unchanged, no working migrations. Receipts/report under
+output/ai-quality-20260922; only bounded synthetic data used.
+
+Resume: read this checkpoint, reconcile Git/ownership and unchanged app inputs.
+Finish remaining dependency-audit/hygiene stages with
+`.venv\Scripts\python.exe -X utf8 scripts/codex_verify.py --mode security --base-ref 4f99927c25f44570a6686e1e092c8d7991f4ecda`.
+Reuse exact unchanged backend/frontend/browser evidence above; do not repeat
+implementation or completed live calls. Code/lock changes invalidate affected
+checks. Then final review, docs closeout, normal push HEAD:main, SHA readback and
+actual CI. Do not start agent-page redesign/channels or rotate tasks. Prior
+completed finance/scheduling/staff-confirmation phases must not be reopened.
+
+Below is the original phase contract and chronological evidence.
+
 - Authorization: owner "приступай" after file/logic scope and request for broad
   tests; small synthetic CRM fixtures and real OpenRouter requests authorized.
 - Mode implementation/verification; gap code/evidence. One phase: all three AI

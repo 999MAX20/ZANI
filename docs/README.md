@@ -2,6 +2,10 @@
 
 This folder is the single entry point for ZANI technical documentation.
 
+[Root project status](../STATUS.md) is the owner-approved compact entry point
+for recovering context in a new chat. It routes to existing checkpoints and
+contracts; detailed technical documentation and evidence retain their owners.
+
 ## Current backend boundary and documentation status
 
 - [Local CRM completion and clinic admission, 2026-09-21](pilot/local-crm-completion.md) — finite remaining business cycles, existing IDs/code, current verification and two acceptance boundaries; not automatic implementation authorization.

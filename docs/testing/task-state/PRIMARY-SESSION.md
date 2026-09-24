@@ -2,6 +2,36 @@
 
 Дата: 2026-09-24. Это карточка исполнения, не продуктовый backlog.
 
+## Root status entry point — locally verified; publication tracked in receipt, 2026-09-24
+
+- Source: owner voice approval «давай попробуем реализовать» after discussing
+  recovery in a new chat. Mode: documentation implementation; gap: evidence routing.
+- Result: root STATUS.md summarizes current state, completed work, decisions,
+  blockers and one next step; links retain detailed evidence in existing owners.
+- Owner: registered primary; canonical C:\Users\user\Desktop\Zani;
+  branch codex/ui-testing-toolkit; clean base 443f69ed317a4f7f35ad07fe11ad0b4f5d40ded8.
+  No pre-existing WIP; registry idle. Scope: STATUS.md, AGENTS.md, docs index,
+  task template and this checkpoint. No application/hook/registry changes,
+  automatic transfer, new product phase or new backlog.
+- Acceptance: a new reader can locate scope, closure evidence, remaining work,
+  authority and next action without chat history; status updates required at
+  meaningful checkpoints; missing local evidence is explicit, not assumed PASS.
+- Reuse: PRIMARY-SESSION, project handoff, session registry and rollover protocol.
+  Permission/tenant/notification/BusinessEvent/AI runtime/migration/env: N/A, docs only.
+- Required gate: working/index/range diff hygiene, local links and consistency
+  review, secret/untracked review; normal HEAD:main publication and SHA readback.
+  Full application rerun not required for docs-only delta. Record actual CI
+  separately; do not infer green from prior code evidence or a queued run.
+- Implemented: STATUS.md with current/product state, approved decisions,
+  limitations, recovery path and maintenance cadence; AGENTS/template/index routing.
+- Verified: new local Markdown targets exist; source/decision/ownership consistency
+  reviewed; git diff --check PASS. Staged/range hygiene and exact publication/CI
+  outcome are recorded in output/status-entry-20260924/result.json.
+  No runtime tests/build/live calls: application inputs unchanged, docs-only gate.
+- Next: reviewed docs commit, normal publication/readback and actual CI; then stop.
+  COMPLETE_PUBLISHED_CI_SUCCESS in the receipt closes publication. New chat creation,
+  ownership transfer and archival are not part of this task.
+
 ## Simplified AI agent setup — locally verified; publication tracked in receipt
 
 - Authorization: owner approved profile → knowledge → behavior → test → launch

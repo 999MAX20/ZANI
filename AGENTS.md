@@ -62,6 +62,15 @@ an audit finding or another writer's edits never trigger publication by themselv
 
 ## Task Continuity — Required
 
+Read root `STATUS.md` after this file when starting or restoring context.
+It is the compact recovery entry point, not another backlog or a replacement
+for the selected task checkpoint and authoritative product contracts. The current
+owner updates it when scope, meaningful progress, blockers or next action change,
+and before ending or an agreed handoff; keep detailed commands/evidence in the
+existing checkpoint. Follow its links and verify actual Git/ownership state.
+Creating/opening a new chat does not transfer ownership. No automatic handoff,
+background autosave or hook activation is introduced by this documentation.
+
 Before starting, resuming or continuing after compaction, read the continuity
 section in `docs/testing/CODEX_TASK_TEMPLATE.md` and the selected task checkpoint.
 Recheck the actual checkout, branch, HEAD, dirty scope and evidence before edits.

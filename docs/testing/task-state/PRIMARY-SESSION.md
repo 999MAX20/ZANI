@@ -2,7 +2,7 @@
 
 Дата: 2026-09-24. Это карточка исполнения, не продуктовый backlog.
 
-## Simplified AI agent setup — ACTIVE, 2026-09-24
+## Simplified AI agent setup — locally verified; publication tracked in receipt
 
 - Authorization: owner approved profile → knowledge → behavior → test → launch
   workflow (annotation «согласен — приступай»); bounded implementation phase.
@@ -30,42 +30,37 @@
   proof where needed; full codex_verify --mode full --base-ref feeb006e157008083e2136e15333cdde5e25d23f
   after code candidate. Review explicit diff, normal push HEAD:main, readback
   SHA and actual backend/frontend CI. Prior phase receipt is COMPLETE.
-- Progress: simplified form/shared dirty settings, dental preset, localized
-  independent preview and shared qualification policy implemented. 7 new
-  isolated backend tests PASS; first build/i18n PASS (later UI delta pending).
-  Live 3-case test: price/booking replies and complaint handoff returned 200,
-  no CRM/Inbox/notification records, but human review found invented RUB and
-  contradictory tomorrow interpretation. Missing context currency/local date
-  proven; minimal shared scheduling context fix + regression assertions added.
-  Prior AI foundation stays closed; this new reproduction justifies that delta.
-- Iteration evidence: output/agent-setup-20260924. Initial permission test
-  corrected to documented 404 hiding for no VIEW; separate no-SUGGEST 403 PASS.
-  First UI fixture had unsaved seeded profile, preventing creation; fixture
-  precondition fixed, changed test running. Initial live harness testserver host
-  was rejected before provider call; rerun with localhost reached live provider.
-  Next: focused UI/live delta, complete review/full gate/publication/actual CI.
-- 2026-09-24 verification checkpoint: final focused set (bots.tests_preview,
-  bots.tests_readiness, ai_core.tests_quality) 41 PASS on isolated SQLite.
-  Desktop/mobile setup tests 2 PASS after fixing test fixture precondition and
-  using the real combobox control; behavior-save extension is running now.
-  Live OpenRouter: price now KZT, tomorrow matches supplied slots, complaint
-  handoff without reply. Saved KK initially ignored; added supported language
-  system constraint, separate live recheck returned Kazakh. Total 13 provider
-  calls across bounded runs; each disposable DB removed, no CRM/Inbox/notify
-  writes. Screenshots inspected; no horizontal overflow. No CUA/ordinary DB
-  mutation or public deployment. Current next step: reviewed candidate commit,
-  full gate against feeb006, normal publication and CI. Phase remains ACTIVE.
-- Candidate 56e1853b8203ad6fe2d9f6398e1cb01f8aba19ab committed locally; final
-  behavior-save browser extension 2 PASS /1.9m. Full gate running, session25074,
-  full-gate.log: 2 failures in unchanged BotsFoundationTests (no future slots
-  after 17:00 UTC with only today's 09–18 working hours). Exact 2-test isolated
-  reproduction failed; unchanged tests pass with 08:00 UTC clock (2/2.068s),
-  proving time-dependent fixture baseline, not a settings/scheduling regression.
-  Only those fixtures changed to tomorrow; all assertions retained. Real-clock
-  focused recheck running. Finish first full run to expose other failures, commit
-  fixture fix, repeat required full gate on final code/tests, then publish/CI.
-  Remote main freshly confirmed feeb006 by ls-remote + GitHub. Use explicit fetch
-  refspec refs/heads/main:refs/remotes/origin/main (main absent from fetch config).
+- Current checkpoint: implementation committed as 56e1853b8203ad6fe2d9f6398e1cb01f8aba19ab;
+  deterministic test-fixture correction committed as
+  7200a4bf183f7300cc9f9ecfac7e390610a897e9. Final closeout changes only docs;
+  application/test inputs are frozen. Publication/CI readback belongs to receipt.
+- Verified: 41 focused tests PASS; final desktop/mobile setup + behavior-save
+  tests 2 PASS /1.9m. Screenshots inspected; no horizontal overflow. Live bounded
+  OpenRouter tests: price KZT, real next-day slots, complaint handoff, saved KK
+  reply, no CRM/Inbox/notification writes. 13 provider calls total; disposable
+  databases removed. First live cases exposed missing currency/date and ignored
+  KK; minimal context/system-language fixes and rechecks recorded in report.
+- Initial full gate on 56e1853: 1158 tests /936.851s, exactly 1 failure + 1 error
+  in unchanged today's-hours bot fixtures after 17:00 UTC. Exact focused
+  reproduction failed; same tests PASS at 08:00 UTC (2/2.068s). Moved only those
+  fixtures to tomorrow, all assertions retained; real-clock 2 PASS /1.933s.
+  This is proven clock-sensitive baseline, not a product scheduling regression.
+- Required final full gate on 7200a4b PASS, exit 0:
+  `.venv\Scripts\python.exe -X utf8 scripts/codex_verify.py --mode full --base-ref feeb006e157008083e2136e15333cdde5e25d23f`.
+  Log output/agent-setup-20260924/full-final-gate.log: 1158 tests /953.162s PASS;
+  check/migration drift, app/widget build, 5007 RU/KK/EN keys, bundle budgets,
+  2 mobile role tests /1.2m and pip/npm audits PASS (no known vulnerabilities).
+  Earlier full-gate.log remains FAILED; frontend/security stages had not run.
+- Evidence/report/status: output/agent-setup-20260924/report.md and result.json.
+  UI iteration failures were fixture precondition/custom-combobox test issues;
+  initial live testserver host rejection happened before any provider call.
+- Remote main is feeb006 (ls-remote and GitHub readback); local fetch mapping
+  excludes main, so use explicit refs/heads/main:refs/remotes/origin/main.
+  Publication: normal push HEAD:main after docs hygiene/outgoing review; exact
+  final SHA, remote readback and backend/frontend CI in result.json. Only
+  COMPLETE_PUBLISHED_CI_SUCCESS closes this phase; pending/failure stays unfinished.
+  Stop after that receipt; no further product phase or task rotation authorized.
+  No working DB/.env changes, public deployment, new channels or further phase.
 
 Previous phase below is closed by output/ai-quality-20260922/result.json.
 

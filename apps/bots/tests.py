@@ -521,11 +521,12 @@ class BotsFoundationTests(TestCase):
             price_from=15000,
         )
         resource = Resource.objects.create(business=self.business, name="Айгерим", resource_type=Resource.ResourceTypes.STAFF)
-        today = timezone.localdate()
+        # Keep a future slot even when the suite runs after clinic closing time.
+        slot_date = timezone.localdate() + timezone.timedelta(days=1)
         WorkingHours.objects.create(
             business=self.business,
             resource=resource,
-            weekday=today.weekday(),
+            weekday=slot_date.weekday(),
             start_time=time(9, 0),
             end_time=time(18, 0),
         )
@@ -576,11 +577,12 @@ class BotsFoundationTests(TestCase):
             price_from=15000,
         )
         resource = Resource.objects.create(business=self.business, name="Айгерим", resource_type=Resource.ResourceTypes.STAFF)
-        today = timezone.localdate()
+        # Keep a future slot even when the suite runs after clinic closing time.
+        slot_date = timezone.localdate() + timezone.timedelta(days=1)
         WorkingHours.objects.create(
             business=self.business,
             resource=resource,
-            weekday=today.weekday(),
+            weekday=slot_date.weekday(),
             start_time=time(9, 0),
             end_time=time(18, 0),
         )

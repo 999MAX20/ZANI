@@ -55,6 +55,17 @@
   writes. Screenshots inspected; no horizontal overflow. No CUA/ordinary DB
   mutation or public deployment. Current next step: reviewed candidate commit,
   full gate against feeb006, normal publication and CI. Phase remains ACTIVE.
+- Candidate 56e1853b8203ad6fe2d9f6398e1cb01f8aba19ab committed locally; final
+  behavior-save browser extension 2 PASS /1.9m. Full gate running, session25074,
+  full-gate.log: 2 failures in unchanged BotsFoundationTests (no future slots
+  after 17:00 UTC with only today's 09–18 working hours). Exact 2-test isolated
+  reproduction failed; unchanged tests pass with 08:00 UTC clock (2/2.068s),
+  proving time-dependent fixture baseline, not a settings/scheduling regression.
+  Only those fixtures changed to tomorrow; all assertions retained. Real-clock
+  focused recheck running. Finish first full run to expose other failures, commit
+  fixture fix, repeat required full gate on final code/tests, then publish/CI.
+  Remote main freshly confirmed feeb006 by ls-remote + GitHub. Use explicit fetch
+  refspec refs/heads/main:refs/remotes/origin/main (main absent from fetch config).
 
 Previous phase below is closed by output/ai-quality-20260922/result.json.
 

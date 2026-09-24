@@ -2,6 +2,35 @@
 
 Дата: 2026-09-24. Это карточка исполнения, не продуктовый backlog.
 
+## Streamline repository instructions — locally verified; publication tracked in receipt, 2026-09-24
+
+- Source: owner voice request to rewrite AGENTS.md after discussing focused checks,
+  concise rules and recovery. Mode: documentation; gap: policy clarity, not runtime.
+- Owner: registered primary; canonical C:\Users\user\Desktop\Zani;
+  branch codex/ui-testing-toolkit; clean base 4f8ca077969763040901b973bb9839f13fd86ec3.
+- Scope: AGENTS.md, recovery clarification in SESSION_ROLLOVER, STATUS.md and this
+  checkpoint. Reuse testing matrix, task template and existing domain contracts.
+- Result: shorter root instructions with ordered workflow and risk-based checks;
+  no lost security/domain/publication/UI invariant. Unexpected chat loss permits
+  read-only reconstruction, not self-appointed ownership or automatic transfer.
+  Actual exceptional transfer requires an explicit owner decision and evidence.
+- Non-goals: application code, CI configuration, hooks, registry mutation, new chat,
+  archive, deployment, test weakening or product phase. All runtime impacts N/A.
+- Required gate: full old/new rule comparison, link and command consistency,
+  working/index/range hygiene, reviewed explicit docs commit, normal HEAD:main
+  push/readback and actual CI. No local application rerun for unchanged inputs.
+- Previous root-status phase published as 4f8ca07; both CI jobs successful:
+  https://github.com/999MAX20/ZANI/actions/runs/36040110474.
+- Implemented: AGENTS reduced from 475 to 229 lines (24428 to 15936 characters),
+  ordered workflow and verification matrix; unavailable-chat diagnostic path added
+  to existing rollover protocol. Explicit owner recovery decision still required;
+  no self-assignment, automatic transfer or new registry/hook behavior.
+- Verified: old/new rule-group review, all local links/contract paths, working diff
+  hygiene PASS. Report/commands, staged/range hygiene, final SHA and actual CI:
+  output/agent-rules-20260924/report.md and result.json. No app rerun for docs only.
+- Next: normal publication/readback and CI. COMPLETE_PUBLISHED_CI_SUCCESS receipt
+  closes this phase; stop without starting another task or transferring ownership.
+
 ## Root status entry point — locally verified; publication tracked in receipt, 2026-09-24
 
 - Source: owner voice approval «давай попробуем реализовать» after discussing

@@ -610,7 +610,7 @@ Copy this section for every new confirmed precedent:
 
 ### ZD-014 — Live AI failure and source contracts were not explicit
 
-- Recorded: 2026-09-22. Type: AI/API/UI. Status: FIXED_BRANCH, candidate gate pending.
+- Recorded: 2026-09-22. Type: AI/API/UI. Status: VERIFIED_BRANCH; local stage set complete 2026-09-24, publication/CI in receipt.
 - Surface: staff assistant, event analyst, bot suggestions and qualification.
 - Reproduction: reject a live provider request; return malformed source JSON;
   use queued assistant response; ask about another doctor in the same conversation.
@@ -623,7 +623,8 @@ Copy this section for every new confirmed precedent:
 - Branch/base: codex/ui-testing-toolkit / 4f99927c. Exact candidate and verification:
   [PRIMARY-SESSION](../docs/testing/task-state/PRIMARY-SESSION.md), local receipt
   output/ai-quality-20260922/result.json. No secrets or real customer fixture.
-- Checks: focused suites and synthetic live GPT-4o API/UI; full gate pending.
+- Checks: full backend/frontend/mobile stage evidence plus resumed security gate
+  and synthetic live GPT-4o API/UI PASS on unchanged application inputs.
   Real channels/workers/deployment not claimed; source IDs do not prove semantics.
 - Derived rule: test live, unavailable, no-data, malformed source and queued paths
   separately; changing a requested entity must invalidate the old selection.

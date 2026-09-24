@@ -212,8 +212,8 @@ website chat контакта до ИИ; legacy modes лишь предлага�
 Дополнение V1-A01/A02/A10: реализованы проверка source IDs, явные no-data/
 unavailable/invalid-response состояния, безопасные provider errors, scoped job
 polling/retry и передача сложного диалога сотруднику. Выполнен небольшой live
-набор OpenRouter GPT-4o на синтетической стоматологии; итоговый gate/push/CI
-отслеживает [checkpoint](../testing/task-state/PRIMARY-SESSION.md). Это не общий
+набор OpenRouter GPT-4o на синтетической стоматологии; 2026-09-24 завершены
+оставшиеся локальные проверки. Итоговый push/CI отслеживает [checkpoint](../testing/task-state/PRIMARY-SESSION.md). Это не общий
 допуск клиники, не подключение каналов и не гарантия точности любого ответа.
 
 **Есть:** [assistant/context](../../apps/ai_core/assistant.py),
@@ -221,9 +221,10 @@ polling/retry и передача сложного диалога сотрудн
 [provider adapters](../../apps/ai_core/providers/registry.py), bot readiness/lifecycle,
 approval/execution/audit и ZD-009. Реальный провайдер не доказывается mock-ответом.
 
-**Точный остаток:** полный сценарий каждого направления с реальным провайдером,
-проверяемыми источниками, минимальным разрешённым контекстом, учётом запросов,
-отказом/timeout и ручным продолжением. Граница подтверждения в
+**Точный остаток за пределами этого пакета:** реальные каналы/worker и их
+восстановление, сверка оплачиваемого AI usage и дальнейшая семантическая
+приёмка стоматологических сценариев. Локальные источники/no-data/сбои и
+небольшой live-набор проверены; это не гарантия любого ответа. Граница подтверждения в
 [auto_pipeline](../../apps/conversations/auto_pipeline.py) и Inbox проверена
 пакетом 2026-09-22: auto_lead_task, draft_deal и appointment_explicit больше
 не создают Lead/Task/Deal без сотрудника; выбор слота клиентом не создаёт запись.

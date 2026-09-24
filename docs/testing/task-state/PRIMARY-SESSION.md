@@ -1,10 +1,51 @@
 # PRIMARY-SESSION — Platforma.CRM
 
-Дата: 2026-09-22. Это карточка исполнения, не продуктовый backlog.
+Дата: 2026-09-24. Это карточка исполнения, не продуктовый backlog.
 
-## Active: V1-A01/A02/A10 — AI quality, sources and recovery
+## V1-A01/A02/A10 — locally verified; publication tracked in receipt
 
-### Paused by owner — 2026-09-22, resume tomorrow
+### Local closeout — 2026-09-24
+
+Owner resumed the same phase. Canonical root C:\Users\user\Desktop\Zani,
+branch codex/ui-testing-toolkit, primary registry idle, clean resume HEAD
+2a3cab1. Application/config/lock/runner inputs are identical to code candidate
+26d0ad8bbb6356f4221b7888b9739976ac721bf1; subsequent changes are docs only.
+
+All required local stages are now proven for those unchanged application inputs:
+- Preserved full-run evidence: 1151 Django tests /944.729s, drift/system check,
+  npm ci/Vite isolation, 4980 RU/KK/EN keys/types/app/widget/bundle and 2 mobile
+  role smoke /1.4m PASS; synthetic live GPT-4o and manual desktop/mobile PASS.
+- Resumed command PASS:
+  `.venv\Scripts\python.exe -X utf8 scripts/codex_verify.py --mode security --base-ref 4f99927c25f44570a6686e1e092c8d7991f4ecda`.
+  Both hashed Python lock installability checks, pip-audit (no known
+  vulnerabilities), npm audit --audit-level=moderate (0 vulnerabilities),
+  drift/system check and diff hygiene PASS. Log: security-resume-20260924.log.
+- This completes the interrupted full-stage set by reusing unchanged verified
+  inputs; the historical full command remains recorded as interrupted, not
+  rewritten to PASS. No backend/frontend/live repetition needed for docs alone.
+- Scope verified: permitted staff sources/no-data, analyst source validation,
+  bot settings/knowledge/scheduling, handoff without automatic CRM creation,
+  safe provider errors, requester-only queued jobs/replay and UI recovery.
+
+Outgoing range reviewed against fetched main4f99927; only task-owned code/tests/
+docs, no credentials or unrelated WIP. CI workflow contains checks, no deploy.
+Closeout doc links/diff hygiene require review before commit. Final commit,
+normal push HEAD:main, remote SHA readback and actual CI are recorded in
+`output/ai-quality-20260922/result.json`, with exact commands/limits in report.md.
+Until COMPLETE_PUBLISHED_CI_SUCCESS, publication/CI remain unfinished. After
+that receipt this phase is complete; stop without starting the next product phase.
+
+Skipped: additional paid calls and repeated unchanged suites (evidence reused);
+real worker/channel delivery, deployment, working-DB migrations, RAG, arbitrary
+answer accuracy and billing acceptance remain outside this phase. The local
+server receipt is historical, not a current uptime claim. Temporary live
+fixtures were already removed. No new runtime was started on resume.
+Next unstarted scope: simplified agent setup and separately authorized channels.
+Previous finance/scheduling/staff-confirmation closures remain intact.
+
+The following pause and original contract are historical continuity evidence.
+
+### Historical pause — 2026-09-22
 
 Owner: «зафиксируй выполненные задачи; продолжим завтра». Stop implementation
 and publication now; no phase completion or automatic continuation authorized.

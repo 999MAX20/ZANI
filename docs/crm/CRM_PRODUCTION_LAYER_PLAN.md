@@ -1,11 +1,11 @@
 # CRM Production Layer Plan
 
-## V1-A01/A02/A10 quality candidate — 2026-09-22
+## V1-A01/A02/A10 quality locally verified — 2026-09-24
 
 Scoped AI sources, explicit provider failure/no-data, queued UI recovery and
 complaint/provider-failure handoff implemented. Prior staff-confirmation rules
 remain. No migration or external sends. Live synthetic GPT-4o evidence and
-remaining gate/publication status: [checkpoint](../testing/task-state/PRIMARY-SESSION.md);
+local gate evidence and final publication/CI status: [checkpoint](../testing/task-state/PRIMARY-SESSION.md);
 [contract and limits](../ai/AI_ASSISTANT_RULES.md#v1-quality-contract--2026-09-22).
 
 ## V1-A03–A09 confirmation locally verified — 2026-09-22

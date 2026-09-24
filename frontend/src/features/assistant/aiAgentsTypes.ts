@@ -19,6 +19,7 @@ export type AgentFormState = {
 export type BotDraftState = {
   name: string;
   default_language: string;
+  settings_json: Record<string, unknown>;
 };
 
 export type AutoPipelineMode = "off" | "triage" | "lead_task" | "draft_deal";

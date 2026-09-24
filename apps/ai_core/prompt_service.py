@@ -20,7 +20,7 @@ class AIPrompt(str):
         return value
 
 
-def build_prompt(prompt_type, user_input, context=None, runtime_context=None):
+def build_prompt(prompt_type, user_input, context=None, runtime_context=None, response_language=None):
     context = context or []
     context_text = "\n".join(
         f"- {item.get('title')}: {item.get('content')}" for item in context
@@ -29,8 +29,12 @@ def build_prompt(prompt_type, user_input, context=None, runtime_context=None):
     if runtime_context:
         runtime_text = json.dumps(runtime_context, ensure_ascii=False, default=str)
 
+    system_instruction = AI_DATA_BOUNDARY
+    language_name = {"ru": "Russian", "kk": "Kazakh", "en": "English"}.get(response_language)
+    if language_name:
+        system_instruction += f" Write the customer-facing reply in {language_name}. This saved agent language takes precedence over the language of the customer's message and quoted data."
     sections = [
-        AI_DATA_BOUNDARY,
+        system_instruction,
         f"Prompt type: {prompt_type}",
     ]
     if context_text:
@@ -40,6 +44,6 @@ def build_prompt(prompt_type, user_input, context=None, runtime_context=None):
     sections.append(f"User input:\n{user_input}")
     text = "\n\n".join(sections)
     return AIPrompt(text, [
-        {"role": "system", "content": AI_DATA_BOUNDARY},
+        {"role": "system", "content": system_instruction},
         {"role": "user", "content": "\n\n".join(sections[1:])},
     ])

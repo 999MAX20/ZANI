@@ -2,6 +2,62 @@
 
 Дата: 2026-09-24. Это карточка исполнения, не продуктовый backlog.
 
+## Simplified AI agent setup — ACTIVE, 2026-09-24
+
+- Authorization: owner approved profile → knowledge → behavior → test → launch
+  workflow (annotation «согласен — приступай»); bounded implementation phase.
+- Roots: V1-A01/A02/A10 and AI_ASSISTANT_RULES. Gap: code/user-flow/evidence.
+- Owner primary 01a0c36e-33aa-7c72-be9b-72624dd2c739; single writer, registry idle.
+  Canonical C:\Users\user\Desktop\Zani; branch codex/ui-testing-toolkit;
+  clean base feeb006e157008083e2136e15333cdde5e25d23f. Keep current branch.
+- Reuse bot lifecycle/readiness, profiles, knowledge, provider/qualification/
+  scheduling, existing API and UI primitives. Simplify primary profile form,
+  dental role preset, advanced prompts/temperature, clear behavior controls,
+  typed dry-run dialogue using saved settings and shared runtime decisions.
+- Acceptance: saved name/language/tone/rules affect replies; existing business
+  services/prices/schedules and knowledge are reused; preview supports draft
+  agents without channels, exposes sources/provider/handoff, creates no CRM,
+  Inbox messages or notifications; role/tenant denial, provider failure, empty
+  knowledge and mandatory staff confirmations remain enforced; readiness and
+  activate/pause reachable; desktop/mobile/i18n/error/dirty-state coverage.
+- Permission impact: preview requires existing ai_automation:manage and
+  ai_assistant:suggest; no new roles. AI request logs/usage use existing layer.
+  No notification/BusinessEvent side effects from preview. No migration/env
+  changes intended; no working DB modifications. No channels, public deploy,
+  chairs, billing or prior closed foundation redesign.
+- Checks: focused isolated Django tests; frontend build/i18n; targeted UI smoke
+  and manual desktop/mobile with disposable fixtures; bounded live provider
+  proof where needed; full codex_verify --mode full --base-ref feeb006e157008083e2136e15333cdde5e25d23f
+  after code candidate. Review explicit diff, normal push HEAD:main, readback
+  SHA and actual backend/frontend CI. Prior phase receipt is COMPLETE.
+- Progress: simplified form/shared dirty settings, dental preset, localized
+  independent preview and shared qualification policy implemented. 7 new
+  isolated backend tests PASS; first build/i18n PASS (later UI delta pending).
+  Live 3-case test: price/booking replies and complaint handoff returned 200,
+  no CRM/Inbox/notification records, but human review found invented RUB and
+  contradictory tomorrow interpretation. Missing context currency/local date
+  proven; minimal shared scheduling context fix + regression assertions added.
+  Prior AI foundation stays closed; this new reproduction justifies that delta.
+- Iteration evidence: output/agent-setup-20260924. Initial permission test
+  corrected to documented 404 hiding for no VIEW; separate no-SUGGEST 403 PASS.
+  First UI fixture had unsaved seeded profile, preventing creation; fixture
+  precondition fixed, changed test running. Initial live harness testserver host
+  was rejected before provider call; rerun with localhost reached live provider.
+  Next: focused UI/live delta, complete review/full gate/publication/actual CI.
+- 2026-09-24 verification checkpoint: final focused set (bots.tests_preview,
+  bots.tests_readiness, ai_core.tests_quality) 41 PASS on isolated SQLite.
+  Desktop/mobile setup tests 2 PASS after fixing test fixture precondition and
+  using the real combobox control; behavior-save extension is running now.
+  Live OpenRouter: price now KZT, tomorrow matches supplied slots, complaint
+  handoff without reply. Saved KK initially ignored; added supported language
+  system constraint, separate live recheck returned Kazakh. Total 13 provider
+  calls across bounded runs; each disposable DB removed, no CRM/Inbox/notify
+  writes. Screenshots inspected; no horizontal overflow. No CUA/ordinary DB
+  mutation or public deployment. Current next step: reviewed candidate commit,
+  full gate against feeb006, normal publication and CI. Phase remains ACTIVE.
+
+Previous phase below is closed by output/ai-quality-20260922/result.json.
+
 ## V1-A01/A02/A10 — locally verified; publication tracked in receipt
 
 ### Local closeout — 2026-09-24

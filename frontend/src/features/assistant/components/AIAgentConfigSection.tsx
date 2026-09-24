@@ -1,6 +1,5 @@
-import { useEffect, useState } from "react";
-import { useMutation } from "@tanstack/react-query";
-import { Bot, ChevronRight, FileText, Save } from "lucide-react";
+import { useState } from "react";
+import { Bot, ChevronRight, FileText } from "lucide-react";
 
 import { Button } from "../../../components/ui/Button";
 import { Card, CardBody } from "../../../components/ui/Card";
@@ -9,24 +8,20 @@ import { Select } from "../../../components/ui/Select";
 import { Textarea } from "../../../components/ui/Textarea";
 import { useI18n } from "../../../lib/i18n";
 import { cn } from "../../../lib/cn";
-import type { AgentProfile, Bot as BotType } from "../../../types";
+import type { AgentProfile } from "../../../types";
 import type { AgentFormState, BotDraftState } from "../aiAgentsTypes";
-import { HelpCard, FieldHint } from "./AIAgentsShared";
+import { FieldHint } from "./AIAgentsShared";
 export function ProfileManagerSection({
-  bot,
   botDraft,
   setBotDraft,
   form,
   setForm,
-  updateBot,
   canManage,
 }: {
-  bot: BotType;
   botDraft: BotDraftState;
   setBotDraft: React.Dispatch<React.SetStateAction<BotDraftState>>;
   form: AgentFormState;
   setForm: React.Dispatch<React.SetStateAction<AgentFormState>>;
-  updateBot: ReturnType<typeof useMutation<BotType, Error, Partial<BotType>>>;
   canManage: boolean;
 }) {
   const { t } = useI18n();
@@ -34,15 +29,8 @@ export function ProfileManagerSection({
 
   return (
     <div className="space-y-5">
-      {!bot.readiness?.profile_ready ? (
-        <HelpCard
-          title={t("aiAgents.onboarding.profile.helpTitle")}
-          text={t("aiAgents.onboarding.profile.helpText")}
-          recommendation={t("aiAgents.onboarding.profile.recommendation")}
-        />
-      ) : null}
       <SettingsSection botDraft={botDraft} setBotDraft={setBotDraft} setForm={setForm} canManage={canManage} />
-      <PromptingSection form={form} setForm={setForm} canManage={canManage} />
+      <PromptingSection form={form} setForm={setForm} canManage={canManage} advanced={showQuality} />
       <Card variant="outlined">
         <CardBody>
           <button
@@ -53,14 +41,14 @@ export function ProfileManagerSection({
             aria-controls="ai-agent-quality-settings"
           >
             <div>
-              <h3 className="text-lg font-black text-midnight">{t("aiAgents.qualityAdvanced")}</h3>
-              <p className="mt-1 text-sm font-semibold text-slate-500">{t("aiAgents.qualityAdvancedText")}</p>
+              <h3 className="text-lg font-black text-midnight">{t("aiSetup.advanced")}</h3>
+              <p className="mt-1 text-sm font-semibold text-slate-500">{t("aiSetup.advancedText")}</p>
             </div>
             <ChevronRight size={18} className={cn("shrink-0 text-zani-faint transition", showQuality && "rotate-90 text-ai-700")} />
           </button>
         </CardBody>
       </Card>
-      {showQuality ? <div id="ai-agent-quality-settings"><ModelsSection bot={bot} updateBot={updateBot} canManage={canManage} /></div> : null}
+      {showQuality ? <div id="ai-agent-quality-settings"><ModelsSection draft={botDraft} setDraft={setBotDraft} canManage={canManage} /></div> : null}
     </div>
   );
 }
@@ -88,14 +76,12 @@ function SettingsSection({
             </div>
             <div>
               <h3 className="text-xl font-black text-midnight">{t("aiAgents.generalSettings")}</h3>
-              <p className="text-sm font-semibold text-slate-500">{t("aiAgents.generalSettingsText")}</p>
             </div>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <Input label={t("aiAgents.name")} value={botDraft.name} disabled={!canManage} onChange={(event) => setBotDraft((current) => ({ ...current, name: event.target.value }))} />
-              <FieldHint>{t("aiAgents.hint.agentName")}</FieldHint>
+              <Input label={t("aiAgents.name")} value={botDraft.name} disabled={!canManage} onChange={(event) => { const name = event.target.value; setBotDraft((current) => ({ ...current, name })); setForm((current) => ({ ...current, name })); }} />
             </div>
             <div>
               <Select
@@ -113,7 +99,6 @@ function SettingsSection({
                   { value: "en", label: t("language.en") },
                 ]}
               />
-              <FieldHint>{t("aiAgents.hint.agentLanguage")}</FieldHint>
             </div>
           </div>
         </CardBody>
@@ -126,10 +111,12 @@ function PromptingSection({
   form,
   setForm,
   canManage,
+  advanced,
 }: {
   form: AgentFormState;
   setForm: React.Dispatch<React.SetStateAction<AgentFormState>>;
   canManage: boolean;
+  advanced: boolean;
 }) {
   const { t } = useI18n();
   return (
@@ -141,15 +128,13 @@ function PromptingSection({
           </div>
           <div>
             <h3 className="text-xl font-black text-midnight">{t("aiAgents.instructionTitle")}</h3>
-            <p className="text-sm font-semibold text-slate-500">{t("aiAgents.instructionText")}</p>
           </div>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
-          <div>
-            <Input label={t("aiAgents.profileName")} value={form.name} disabled={!canManage} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} />
-            <FieldHint>{t("aiAgents.hint.profileName")}</FieldHint>
-          </div>
+          <Button type="button" variant="secondary" disabled={!canManage} onClick={() => setForm((current) => ({ ...current, role_description: t("aiSetup.dentalRole"), system_prompt: t("aiSetup.dentalPrompt"), rules_text: t("aiAgents.defaultRules"), escalation_text: t("aiSetup.dentalEscalation") }))}>
+            {t("aiSetup.applyDentalRole")}
+          </Button>
           <div>
             <Select
               label={t("aiAgents.tone")}
@@ -164,15 +149,15 @@ function PromptingSection({
                 { value: "support", label: t("aiAgents.tone.support") },
               ]}
             />
-            <FieldHint>{t("aiAgents.hint.tone")}</FieldHint>
           </div>
         </div>
 
         <div className="mt-4 grid gap-4">
           <div>
             <Textarea label={t("aiAgents.roleDescription")} value={form.role_description} disabled={!canManage} onChange={(event) => setForm((current) => ({ ...current, role_description: event.target.value }))} />
-            <FieldHint>{t("aiAgents.hint.role")}</FieldHint>
           </div>
+          {advanced ? <>
+          <Input label={t("aiAgents.profileName")} value={form.name} disabled={!canManage} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} />
           <div>
             <Textarea label={t("aiAgents.systemPrompt")} value={form.system_prompt} disabled={!canManage} onChange={(event) => setForm((current) => ({ ...current, system_prompt: event.target.value }))} />
             <FieldHint>{t("aiAgents.hint.systemPrompt")}</FieldHint>
@@ -181,10 +166,8 @@ function PromptingSection({
             <Textarea label={t("aiAgents.rules")} value={form.rules_text} disabled={!canManage} onChange={(event) => setForm((current) => ({ ...current, rules_text: event.target.value }))} />
             <FieldHint>{t("aiAgents.hint.rules")}</FieldHint>
           </div>
-          <div>
-            <Textarea label={t("aiAgents.escalationRules")} value={form.escalation_text} disabled={!canManage} onChange={(event) => setForm((current) => ({ ...current, escalation_text: event.target.value }))} />
-            <FieldHint>{t("aiAgents.hint.escalation")}</FieldHint>
-          </div>
+
+          </> : null}
         </div>
 
       </CardBody>
@@ -192,16 +175,12 @@ function PromptingSection({
   );
 }
 
-function ModelsSection({ bot, updateBot, canManage }: { bot: BotType; updateBot: ReturnType<typeof useMutation<BotType, Error, Partial<BotType>>>; canManage: boolean }) {
+function ModelsSection({ draft, setDraft, canManage }: { draft: BotDraftState; setDraft: React.Dispatch<React.SetStateAction<BotDraftState>>; canManage: boolean }) {
   const { t } = useI18n();
-  const settings = bot.settings_json || {};
-  const [model, setModel] = useState(String(settings.model || ""));
-  const [temperature, setTemperature] = useState(Number(settings.temperature ?? 0.4));
-
-  useEffect(() => {
-    setModel(String(bot.settings_json?.model || ""));
-    setTemperature(Number(bot.settings_json?.temperature ?? 0.4));
-  }, [bot.id, bot.settings_json]);
+  const model = String(draft.settings_json.model || "");
+  const temperature = Number(draft.settings_json.temperature ?? 0.4);
+  const setModel = (value: string) => setDraft((current) => ({ ...current, settings_json: { ...current.settings_json, model: value } }));
+  const setTemperature = (value: number) => setDraft((current) => ({ ...current, settings_json: { ...current.settings_json, temperature: value } }));
 
   return (
     <Card variant="outlined">
@@ -227,14 +206,7 @@ function ModelsSection({ bot, updateBot, canManage }: { bot: BotType; updateBot:
             <input className="w-full accent-ai-600" type="range" min="0" max="1" step="0.1" value={temperature} disabled={!canManage} onChange={(event) => setTemperature(Number(event.target.value))} />
             <FieldHint>{t("aiAgents.hint.temperature")}</FieldHint>
           </label>
-          <Button
-            type="button"
-            disabled={!canManage}
-            isLoading={updateBot.isPending}
-            onClick={() => updateBot.mutate({ settings_json: { ...bot.settings_json, model, temperature } })}
-          >
-            <Save size={16} /> {t("common.save")}
-          </Button>
+
         </div>
       </CardBody>
     </Card>

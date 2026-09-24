@@ -45,10 +45,29 @@ export type BotSuggestedReplyResponse = {
 };
 
 export const botAiApi = {
+  preview: async (botId: number, messages: AgentPreviewMessage[]) => {
+    const { data } = await apiClient.post<AgentPreviewResponse>(`/api/bots/${botId}/preview/`, { messages }, { timeout: 120_000 });
+    return data;
+  },
   suggestReply: async (conversationId: number) => {
     const { data } = await apiClient.post<BotSuggestedReplyResponse>(`/api/bot-conversations/${conversationId}/suggest-reply/`);
     return data;
   },
+};
+
+export type AgentPreviewMessage = { direction: "inbound" | "outbound"; text: string };
+export type AgentPreviewResponse = {
+  reply: string;
+  handoff_required: boolean;
+  decision: string;
+  summary: string;
+  automatic_reply_enabled: boolean;
+  automation_enabled: boolean;
+  provider_state: "live" | "mock";
+  sources: Array<{ type: string; id: number; label: string }>;
+  log_id: number;
+  model: string;
+  provider: string;
 };
 
 export const telegramChannelApi = {

@@ -42,8 +42,9 @@ def qualification_from_payload(payload: dict[str, Any]) -> ConversationQualifica
     return _qualification_from_payload(payload)
 
 
-def qualify_conversation(*, conversation: BotConversation, user=None, allow_mock=True) -> tuple[ConversationQualification, AIRequestLog | None]:
-    message_context = build_bot_conversation_context(conversation, limit=16)
+def qualify_conversation(*, conversation: BotConversation, user=None, allow_mock=True, message_context=None) -> tuple[ConversationQualification, AIRequestLog | None]:
+    if message_context is None:
+        message_context = build_bot_conversation_context(conversation, limit=16)
     services = list(Service.objects.filter(business=conversation.business, is_active=True).order_by("name")[:30])
     service_catalog = [{"id": service.id, "name": service.name, "price_from": str(service.price_from or "")} for service in services]
     profile = get_agent_profile(conversation)
@@ -83,6 +84,7 @@ def qualify_conversation(*, conversation: BotConversation, user=None, allow_mock
         user_input=user_input,
         input_json={
             "conversation_id": conversation.id,
+            "is_preview": conversation.pk is None,
             "bot_id": conversation.bot_id,
             "channel": conversation.channel,
             "external_user_id": conversation.external_user_id,

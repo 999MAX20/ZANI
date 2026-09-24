@@ -9,9 +9,13 @@ from apps.scheduling.services import get_available_slots
 from apps.services.models import Service
 
 
-def build_bot_scheduling_context(conversation, *, qualification=None, days=5, slots_per_resource=3):
+def build_bot_scheduling_context(conversation, *, qualification=None, days=5, slots_per_resource=3, message_context=None):
     business = conversation.business
-    messages = list(conversation.messages.filter(direction="inbound").order_by("-created_at", "-id").values_list("text", flat=True)[:8])
+    messages = (
+        [message["text"] for message in reversed(message_context) if message["direction"] == "inbound"][:8]
+        if message_context is not None else
+        list(conversation.messages.filter(direction="inbound").order_by("-created_at", "-id").values_list("text", flat=True)[:8])
+    )
     message_text = (messages[0] if messages else "").lower()
     services = list(Service.objects.filter(business=business, is_active=True).order_by("name")[:20])
     resources = list(Resource.objects.filter(business=business, is_active=True, resource_type=Resource.ResourceTypes.STAFF).order_by("name")[:20])
@@ -21,8 +25,12 @@ def build_bot_scheduling_context(conversation, *, qualification=None, days=5, sl
         matched_service = _match_service(services, " ".join(messages[1:]).lower(), qualification=qualification)
     matched_resource = _match_resource(resources, message_text)
     required_questions = _required_questions(matched_service=matched_service, matched_resource=matched_resource, resources=resources)
+    today = timezone.localtime(timezone.now(), business_zone(business)).date()
 
     context = {
+        "currency": business.currency,
+        "timezone": business.timezone,
+        "local_date": today.isoformat(),
         "services": [_service_payload(service) for service in services],
         "resources": [_resource_payload(resource) for resource in resources],
         "matched_service": _service_payload(matched_service) if matched_service else None,
@@ -38,7 +46,6 @@ def build_bot_scheduling_context(conversation, *, qualification=None, days=5, sl
         context["required_questions"].append("Передать запрос администратору: активный специалист не найден.")
         return context
 
-    today = timezone.localtime(timezone.now(), business_zone(business)).date()
     offsets = range(days)
     if "послезавтра" in message_text:
         offsets = [2]
@@ -46,6 +53,7 @@ def build_bot_scheduling_context(conversation, *, qualification=None, days=5, sl
         offsets = [1]
     elif "сегодня" in message_text:
         offsets = [0]
+    context["searched_dates"] = [(today + timedelta(days=offset)).isoformat() for offset in offsets]
     for day_offset in offsets:
         slot_date = today + timedelta(days=day_offset)
         for resource in slot_resources:

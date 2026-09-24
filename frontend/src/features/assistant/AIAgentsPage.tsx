@@ -4,7 +4,7 @@ import { Plus } from "lucide-react";
 import { useNavigate } from "react-router";
 
 import { agentProfilesApi, businessKnowledgeApi } from "../../api/ai";
-import { botAiApi, botChannelsApi, botConversationsApi, botLifecycleApi, botMessagesApi, botsApi, ensureBotChannel, type BotSuggestedReplyResponse } from "../../api/bots";
+import { botChannelsApi, botLifecycleApi, botsApi, ensureBotChannel } from "../../api/bots";
 import { usePageHeader } from "../../components/layout/PageHeaderContext";
 import { ErrorState, LoadingState } from "../../components/ui/StateViews";
 import { useAuth } from "../auth/AuthProvider";
@@ -28,7 +28,6 @@ export function AIAgentsPage() {
   const canManage = hasPermission(user, business?.id, "ai_automation", "manage");
   const canViewChannels = hasPermission(user, business?.id, "integrations", "view");
   const canManageChannels = hasPermission(user, business?.id, "integrations", "manage");
-  const canViewConversations = hasPermission(user, business?.id, "conversations", "view");
   const canSuggest = hasPermission(user, business?.id, "ai_assistant", "suggest");
   const queryClient = useQueryClient();
   const { bots } = useEntityData({
@@ -42,7 +41,6 @@ export function AIAgentsPage() {
   });
   const [createOpen, setCreateOpen] = useState(false);
   const [newAgentName, setNewAgentName] = useState(() => t("aiAgents.defaultNewAgentName"));
-  const [suggestedReply, setSuggestedReply] = useState<BotSuggestedReplyResponse | null>(null);
   useMetaOAuthCallbackBridge();
 
   const botList = bots.data || [];
@@ -61,21 +59,10 @@ export function AIAgentsPage() {
   );
   const [isSavingEditor, setIsSavingEditor] = useState(false);
   const loadChannels = Boolean(business && canViewChannels && ["channels", "test"].includes(activeSection));
-  const loadRuntime = Boolean(business && canViewConversations && activeSection === "test");
   const botChannels = useQuery<BotChannel[]>({
     queryKey: ["bot-channels"],
     queryFn: () => botChannelsApi.list(),
     enabled: loadChannels,
-  });
-  const botConversations = useQuery({
-    queryKey: ["bot-conversations"],
-    queryFn: () => botConversationsApi.list(),
-    enabled: loadRuntime,
-  });
-  const botMessages = useQuery({
-    queryKey: ["bot-messages"],
-    queryFn: () => botMessagesApi.list(),
-    enabled: loadRuntime,
   });
   useEffect(() => {
     if (!botChannels.dataUpdatedAt) return;
@@ -170,11 +157,6 @@ export function AIAgentsPage() {
     ]),
   });
 
-  const suggestReply = useMutation({
-    mutationFn: (conversationId: number) => botAiApi.suggestReply(conversationId),
-    onSuccess: (data) => setSuggestedReply(data),
-  });
-
   const toggleBotStatus = useMutation({
     mutationFn: (active: boolean) => {
       if (!selectedBot) throw new Error("Agent is not selected.");
@@ -184,19 +166,21 @@ export function AIAgentsPage() {
   });
 
   const saveEditorDrafts = useCallback(async () => {
-    if (!selectedBot || !canManage || !botDraft.name.trim() || !profileForm.name.trim()) return;
+    if (!selectedBot || !canManage || !botDraft.name.trim() || !profileForm.name.trim()) return false;
     setIsSavingEditor(true);
     try {
       const [updatedBot, updatedProfile] = await Promise.all([
         updateBot.mutateAsync({
           name: botDraft.name.trim(),
           default_language: botDraft.default_language.trim() || "ru",
+          settings_json: botDraft.settings_json,
         }),
         saveProfile.mutateAsync(),
       ]);
       markBotSaved(updatedBot);
       markProfileSaved(updatedProfile);
       setSaveState("saved");
+      return true;
     } finally {
       setIsSavingEditor(false);
     }
@@ -235,16 +219,16 @@ export function AIAgentsPage() {
     : activeSection === "knowledge"
       ? knowledge.error
       : activeSection === "test"
-        ? botChannels.error || botConversations.error || botMessages.error || knowledge.error
+        ? botChannels.error || knowledge.error
         : null;
   const sectionLoading = activeSection === "channels"
     ? botChannels.isLoading
     : activeSection === "knowledge"
       ? knowledge.isLoading
       : activeSection === "test"
-        ? botChannels.isLoading || botConversations.isLoading || botMessages.isLoading || knowledge.isLoading
+        ? (loadChannels && botChannels.isLoading) || knowledge.isLoading
         : false;
-  const mutationError = createBot.error || updateBot.error || saveProfile.error || addChannel.error || toggleChannel.error || toggleBotStatus.error || suggestReply.error;
+  const mutationError = createBot.error || updateBot.error || saveProfile.error || addChannel.error || toggleChannel.error || toggleBotStatus.error;
 
   const closeNavigationGuard = () => {
     if (navigationBlocker.state === "blocked") navigationBlocker.reset();
@@ -258,8 +242,7 @@ export function AIAgentsPage() {
 
   const saveAndContinue = async () => {
     if (navigationBlocker.state !== "blocked") return;
-    await saveEditorDrafts();
-    navigationBlocker.proceed();
+    if (await saveEditorDrafts()) navigationBlocker.proceed();
   };
 
   return (
@@ -267,16 +250,13 @@ export function AIAgentsPage() {
       activeSection={activeSection}
       addChannel={addChannel}
       botChannels={botChannels.data || []}
-      botConversations={botConversations.data || []}
       botDraft={botDraft}
-      botMessages={botMessages.data || []}
       bots={botList}
       businessId={business.id}
       canManage={canManage}
       canManageChannels={canManageChannels}
       canSuggest={canSuggest}
       canViewChannels={canViewChannels}
-      canViewConversations={canViewConversations}
       createAgentPending={createBot.isPending}
       createError={createBot.error}
       createOpen={createOpen}
@@ -304,12 +284,10 @@ export function AIAgentsPage() {
       ])}
       onRetrySection={() => void Promise.all([
         ...(loadChannels ? [botChannels.refetch()] : []),
-        ...(loadRuntime ? [botConversations.refetch(), botMessages.refetch()] : []),
         ...(["knowledge", "test"].includes(activeSection) ? [knowledge.refetch()] : []),
       ])}
-      onSave={() => void saveEditorDrafts()}
+      onSave={() => void saveEditorDrafts().catch(() => undefined)}
       onSetNewAgentName={setNewAgentName}
-      onSuggest={(conversationId) => suggestReply.mutate(conversationId)}
       onToggleStatus={(active) => toggleBotStatus.mutate(active)}
       pageError={pageError}
       profileForm={profileForm}
@@ -321,10 +299,7 @@ export function AIAgentsPage() {
       selectedProfile={selectedProfile}
       setBotDraft={setBotDraft}
       setProfileForm={setProfileForm}
-      suggestedReply={suggestedReply}
-      suggestReplyPending={suggestReply.isPending}
       toggleChannel={toggleChannel}
-      updateBot={updateBot}
     />
   );
 }

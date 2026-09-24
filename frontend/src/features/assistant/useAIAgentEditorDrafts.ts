@@ -9,6 +9,7 @@ function botDraftFromBot(bot: BotType | null | undefined): BotDraftState {
   return {
     name: bot?.name || "",
     default_language: bot?.default_language || "ru",
+    settings_json: bot?.settings_json || {},
   };
 }
 

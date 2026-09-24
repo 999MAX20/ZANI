@@ -1,33 +1,31 @@
-import { useEffect, useState } from "react";
-import { useMutation } from "@tanstack/react-query";
-import { ChevronRight, FunctionSquare, Save } from "lucide-react";
+import { useState } from "react";
+import { ChevronRight, FunctionSquare } from "lucide-react";
 
-import { Button } from "../../../components/ui/Button";
 import { Card, CardBody } from "../../../components/ui/Card";
 import { Input } from "../../../components/ui/Input";
+import { Textarea } from "../../../components/ui/Textarea";
 import { Select } from "../../../components/ui/Select";
 import { ToggleSwitch } from "../../../components/ui/Switch";
 import { useI18n } from "../../../lib/i18n";
 import { cn } from "../../../lib/cn";
-import type { Bot as BotType } from "../../../types";
-import type { AgentFormState, AutoPipelineMode } from "../aiAgentsTypes";
+import type { AgentFormState, AutoPipelineMode, BotDraftState } from "../aiAgentsTypes";
 import { autoPipelineFromSettings } from "../aiAgentsUtils";
 import { FieldHint } from "./AIAgentsShared";
 export function AgentActionsSection({
-  bot,
+  botDraft,
+  setBotDraft,
   form,
   setForm,
-  updateBot,
   canManage,
 }: {
-  bot: BotType;
+  botDraft: BotDraftState;
+  setBotDraft: React.Dispatch<React.SetStateAction<BotDraftState>>;
   form: AgentFormState;
   setForm: React.Dispatch<React.SetStateAction<AgentFormState>>;
-  updateBot: ReturnType<typeof useMutation<BotType, Error, Partial<BotType>>>;
   canManage: boolean;
 }) {
   const { t } = useI18n();
-  const runtime = autoPipelineFromSettings(bot.settings_json || {});
+  const runtime = autoPipelineFromSettings(botDraft.settings_json || {});
   const toolEnabled = (tool: string) => form.allowed_tools.includes(tool);
   const proposesWork = runtime.enabled && (runtime.mode === "lead_task" || runtime.mode === "draft_deal");
   return (
@@ -53,7 +51,10 @@ export function AgentActionsSection({
           </div>
         </CardBody>
       </Card>
-      <ControlSection bot={bot} updateBot={updateBot} canManage={canManage} />
+      <ControlSection botDraft={botDraft} setBotDraft={setBotDraft} canManage={canManage} />
+      <Card variant="outlined"><CardBody>
+        <Textarea label={t("aiSetup.handoffRules")} value={form.escalation_text} disabled={!canManage} onChange={(event) => setForm((current) => ({ ...current, escalation_text: event.target.value }))} />
+      </CardBody></Card>
       <FunctionsSection form={form} setForm={setForm} canManage={canManage} />
     </div>
   );
@@ -68,30 +69,13 @@ function AuthorityRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-function ControlSection({ bot, updateBot, canManage }: { bot: BotType; updateBot: ReturnType<typeof useMutation<BotType, Error, Partial<BotType>>>; canManage: boolean }) {
+function ControlSection({ botDraft, setBotDraft, canManage }: { botDraft: BotDraftState; setBotDraft: React.Dispatch<React.SetStateAction<BotDraftState>>; canManage: boolean }) {
   const { t } = useI18n();
-  const [config, setConfig] = useState(() => autoPipelineFromSettings(bot.settings_json || {}));
+  const config = autoPipelineFromSettings(botDraft.settings_json);
   const [showAdvanced, setShowAdvanced] = useState(false);
-
-  useEffect(() => {
-    setConfig(autoPipelineFromSettings(bot.settings_json || {}));
-  }, [bot.id, bot.settings_json]);
-
-  const saveConfig = () => {
-    const nextConfig = {
-      ...config,
-      enabled: config.mode !== "off" && config.enabled,
-      min_lead_confidence: Math.max(0.1, Math.min(config.min_lead_confidence, 1)),
-      min_deal_confidence: Math.max(0.1, Math.min(config.min_deal_confidence, 1)),
-      max_auto_reply_chars: Math.max(120, Math.min(config.max_auto_reply_chars, 2000)),
-    };
-    updateBot.mutate({
-      settings_json: {
-        ...bot.settings_json,
-        auto_crm_pipeline: nextConfig,
-      },
-    });
-  };
+  const setConfig = (update: (current: typeof config) => typeof config) => setBotDraft((current) => ({
+    ...current, settings_json: { ...current.settings_json, auto_crm_pipeline: update(autoPipelineFromSettings(current.settings_json)) },
+  }));
 
   return (
     <Card variant="outlined">
@@ -165,7 +149,7 @@ function ControlSection({ bot, updateBot, canManage }: { bot: BotType; updateBot
                   max={2000}
                   value={config.max_auto_reply_chars}
                   disabled={!canManage}
-                  onChange={(event) => setConfig((current) => ({ ...current, max_auto_reply_chars: Number(event.target.value) }))}
+                  onChange={(event) => setConfig((current) => ({ ...current, max_auto_reply_chars: Math.max(120, Math.min(Number(event.target.value) || 900, 2000)) }))}
                 />
                 <FieldHint>{t("aiAgents.hint.maxReplyChars")}</FieldHint>
               </div>
@@ -182,10 +166,6 @@ function ControlSection({ bot, updateBot, canManage }: { bot: BotType; updateBot
             </div>
           ) : null}
         </div>
-
-        <Button className="mt-5" type="button" disabled={!canManage} isLoading={updateBot.isPending} onClick={saveConfig}>
-          <Save size={16} /> {t("common.save")}
-        </Button>
       </CardBody>
     </Card>
   );

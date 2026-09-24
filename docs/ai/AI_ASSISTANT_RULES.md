@@ -10,6 +10,36 @@ neither a financial AI report nor live provider calls.
 
 This document defines what ZANI AI features may do, what they must not do, and how they should use business data.
 
+## Simplified agent setup — 2026-09-24
+
+The agent page reuses profiles, knowledge and lifecycle actions in the order
+profile → knowledge → behavior → channels → test. New drafts have a dental
+receptionist preset; existing profiles are preserved unless the operator applies
+the preset. Language, tone, instructions, behavior, model and temperature share
+the editor save/unsaved-change guard. Advanced instructions/model/temperature
+are optional. Live Inbox remains accessible through Open messages.
+
+`POST /api/bots/{id}/preview/` rehearses up to 16 messages, 2000 characters each,
+using the saved profile and shared qualification/reply/scheduling services.
+It requires `ai_automation:manage` and `ai_assistant:suggest`, tenant-scoped bot
+access and an active saved profile. Draft/paused agents need no channel to test.
+The rehearsal is hypothetical: it bypasses launch prerequisites only for the
+preview, never changes bot status and does not execute the automatic pipeline.
+It creates no clients, CRM work, Inbox messages, events or notifications. AI logs
+(`is_preview`) and ordinary AI request usage are recorded; a normal response
+uses qualification + reply calls, a handoff uses qualification only. Channel
+overrides are not part of the agent-level rehearsal. Mock mode is explicit;
+provider failures return the existing safe error and preserve the typed message.
+
+Readiness still requires a profile, active knowledge and active channel to
+activate. A successful preview is not proof of channel delivery. Context includes
+the business currency, timezone and current local date; the saved RU/KK/EN reply
+language is a system constraint. Source badges identify supplied CRM/knowledge
+context, not a guarantee that every generated sentence is accurate. Booking,
+rescheduling, cancellation and deal outcomes remain staff actions.
+
+Verification and publication status: [primary checkpoint](../testing/task-state/PRIMARY-SESSION.md).
+
 ## V1 action confirmation — locally verified, 2026-09-22
 
 Legacy `auto_lead_task`, `draft_deal`, `appointment_explicit` and mode-based

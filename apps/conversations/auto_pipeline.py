@@ -88,7 +88,7 @@ def maybe_run_auto_pipeline(*, conversation: BotConversation, message: BotMessag
         _save_auto_pipeline_decision(conversation, message, config, state_decision)
         _write_decision_event(conversation, state_decision)
         return state_decision
-    decision = _guard_auto_pipeline(config=config, conversation=conversation, message=message, qualification=qualification, ai_log_id=ai_log.id if ai_log else None)
+    decision = decide_qualified_pipeline(config=config, qualification=qualification, ai_log_id=ai_log.id if ai_log else None)
     decision.confirmation_policy = _confirmation_policy(config)
     if decision.status in {"needs_review", "blocked_low_confidence", "blocked_risky_intent", "blocked_fallback"}:
         handoff_conversation(conversation, reason=decision.reason)
@@ -166,11 +166,9 @@ def resolve_auto_pipeline_config(*, conversation: BotConversation, channel: BotC
     )
 
 
-def _guard_auto_pipeline(
+def decide_qualified_pipeline(
     *,
     config: AutoPipelineConfig,
-    conversation: BotConversation,
-    message: BotMessage,
     qualification: ConversationQualification,
     ai_log_id: int | None,
 ) -> AutoPipelineDecision:
@@ -258,9 +256,14 @@ def _write_decision_event(conversation: BotConversation, decision: AutoPipelineD
 
 
 def _can_auto_reply(*, config: AutoPipelineConfig, conversation: BotConversation, decision: AutoPipelineDecision) -> bool:
-    if not config.auto_send_reply:
-        return False
     if conversation_ai_block_reason(conversation):
+        return False
+    return allows_automatic_reply(config=config, decision=decision)
+
+
+def allows_automatic_reply(*, config: AutoPipelineConfig, decision: AutoPipelineDecision) -> bool:
+    """Shared content policy; runtime additionally checks channel/lifecycle state."""
+    if not config.enabled or config.mode == "off" or not config.auto_send_reply:
         return False
     if decision.status not in {"proposed_lead_task", "proposed_draft_deal", "qualified_only"}:
         return False

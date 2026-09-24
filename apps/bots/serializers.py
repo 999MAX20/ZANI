@@ -48,6 +48,20 @@ class EnsureBotChannelSerializer(serializers.Serializer):
     channel = serializers.ChoiceField(choices=BotChannel.Channels.choices)
 
 
+class AgentPreviewMessageSerializer(serializers.Serializer):
+    direction = serializers.ChoiceField(choices=["inbound", "outbound"])
+    text = serializers.CharField(max_length=2000)
+
+
+class AgentPreviewSerializer(serializers.Serializer):
+    messages = AgentPreviewMessageSerializer(many=True, allow_empty=False, max_length=16)
+
+    def validate_messages(self, messages):
+        if messages[-1]["direction"] != "inbound":
+            raise serializers.ValidationError("The last message must be from the test customer.")
+        return messages
+
+
 class BotChannelSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         return create_bot_channel(validated_data=validated_data)

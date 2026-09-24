@@ -32,6 +32,7 @@ def run_ai_request(
     model=None,
     model_tier=None,
     temperature=None,
+    response_language=None,
 ):
     assert_entitlement_allows(business, EntitlementMetrics.AI_REQUESTS)
     runtime_context = dict(input_json or {})
@@ -41,7 +42,7 @@ def run_ai_request(
     sources = source_catalog(runtime_context.get("crm_context"), context) if grounded else []
     if grounded:
         runtime_context["source_catalog"] = sources
-    prompt = build_prompt(prompt_type=prompt_type, user_input=user_input, context=context, runtime_context=runtime_context)
+    prompt = build_prompt(prompt_type=prompt_type, user_input=user_input, context=context, runtime_context=runtime_context, response_language=response_language)
     if grounded:
         prompt.messages[0]["content"] += ANSWER_CONTRACT
     result = generate_text(
@@ -65,6 +66,7 @@ def run_ai_request(
             "ai_provider": result.provider,
             "ai_model_tier": model_tier,
             "ai_temperature": temperature,
+            "ai_response_language": response_language,
             "provider_state": result.provider_state,
             "sources": result.sources,
             **(input_json or {}),

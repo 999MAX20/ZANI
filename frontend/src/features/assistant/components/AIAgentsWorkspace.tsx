@@ -1,6 +1,5 @@
 import type { ComponentProps, Dispatch, SetStateAction } from "react";
 
-import type { BotSuggestedReplyResponse } from "../../../api/bots";
 import { getApiErrorMessage } from "../../../api/client";
 import { CrmWorkspacePage } from "../../../components/crm";
 import { Button } from "../../../components/ui/Button";
@@ -11,8 +10,6 @@ import type {
   AgentProfile,
   Bot,
   BotChannel,
-  BotConversation,
-  BotMessage,
   BusinessKnowledgeItem,
   Id,
 } from "../../../types";
@@ -30,7 +27,6 @@ import {
   TestAndLaunchSection,
 } from "./AIAgentsSections";
 
-type UpdateBotMutation = ComponentProps<typeof ProfileManagerSection>["updateBot"];
 type AddChannelMutation = ComponentProps<typeof ChannelManagerSection>["addChannel"];
 type ToggleChannelMutation = ComponentProps<typeof ChannelManagerSection>["toggleChannel"];
 
@@ -38,16 +34,13 @@ export function AIAgentsWorkspace({
   activeSection,
   addChannel,
   botChannels,
-  botConversations,
   botDraft,
-  botMessages,
   bots,
   businessId,
   canManage,
   canManageChannels,
   canSuggest,
   canViewChannels,
-  canViewConversations,
   createAgentPending,
   createError,
   createOpen,
@@ -71,7 +64,6 @@ export function AIAgentsWorkspace({
   onRetrySection,
   onSave,
   onSetNewAgentName,
-  onSuggest,
   onToggleStatus,
   pageError,
   profileForm,
@@ -83,24 +75,18 @@ export function AIAgentsWorkspace({
   selectedProfile,
   setBotDraft,
   setProfileForm,
-  suggestedReply,
-  suggestReplyPending,
   toggleChannel,
-  updateBot,
 }: {
   activeSection: AgentSection;
   addChannel: AddChannelMutation;
   botChannels: BotChannel[];
-  botConversations: BotConversation[];
   botDraft: BotDraftState;
-  botMessages: BotMessage[];
   bots: Bot[];
   businessId: Id;
   canManage: boolean;
   canManageChannels: boolean;
   canSuggest: boolean;
   canViewChannels: boolean;
-  canViewConversations: boolean;
   createAgentPending: boolean;
   createError: unknown;
   createOpen: boolean;
@@ -124,7 +110,6 @@ export function AIAgentsWorkspace({
   onRetrySection: () => void;
   onSave: () => void;
   onSetNewAgentName: Dispatch<SetStateAction<string>>;
-  onSuggest: (conversationId: number) => void;
   onToggleStatus: (active: boolean) => void;
   pageError: unknown;
   profileForm: AgentFormState;
@@ -136,10 +121,7 @@ export function AIAgentsWorkspace({
   selectedProfile: AgentProfile | null;
   setBotDraft: Dispatch<SetStateAction<BotDraftState>>;
   setProfileForm: Dispatch<SetStateAction<AgentFormState>>;
-  suggestedReply: BotSuggestedReplyResponse | null;
-  suggestReplyPending: boolean;
   toggleChannel: ToggleChannelMutation;
-  updateBot: UpdateBotMutation;
 }) {
   const { t } = useI18n();
 
@@ -159,13 +141,6 @@ export function AIAgentsWorkspace({
   }
 
   const channels = botChannels.filter((channel) => channel.bot === selectedBot?.id);
-  const conversations = botConversations.filter((conversation) => conversation.bot === selectedBot?.id);
-  const latestConversation = conversations[0];
-  const conversationIds = new Set(conversations.map((conversation) => conversation.id));
-  const messages = botMessages.filter((message) => conversationIds.has(message.conversation));
-  const latestMessages = latestConversation
-    ? messages.filter((message) => message.conversation === latestConversation.id).slice(-6)
-    : [];
   const activeChannelsCount = channels.filter((channel) => channel.status === "active").length;
   const activeKnowledgeCount = knowledgeItems.filter((item) => item.is_active).length;
   const launchReady = selectedBot?.readiness?.is_ready
@@ -173,10 +148,9 @@ export function AIAgentsWorkspace({
   const onboardingSteps = selectedBot
     ? getOnboardingSteps({
         botId: selectedBot.id,
-        profileReady: Boolean(selectedProfile?.is_active),
-        hasActiveChannel: activeChannelsCount > 0,
-        hasKnowledge: activeKnowledgeCount > 0,
-        hasTestDialog: Boolean(latestConversation),
+        profileReady: selectedBot.readiness?.profile_ready ?? Boolean(selectedProfile?.is_active),
+        hasActiveChannel: selectedBot.readiness?.channel_ready ?? activeChannelsCount > 0,
+        hasKnowledge: selectedBot.readiness?.knowledge_ready ?? activeKnowledgeCount > 0,
         t,
       })
     : [];
@@ -227,13 +201,11 @@ export function AIAgentsWorkspace({
             onOpenMessages={onOpenMessages}
             onReset={onReset}
             onSave={onSave}
-            showFooter={activeSection === "profile" || activeSection === "actions"}
+            showFooter={dirty || activeSection === "profile" || activeSection === "actions"}
           >
             {mutationError ? <ErrorState message={getApiErrorMessage(mutationError)} /> : null}
             {activeSection === "channels" && !canViewChannels ? (
               <ErrorState message={t("aiAgents.channelsPermissionDenied")} />
-            ) : activeSection === "test" && !canViewConversations ? (
-              <ErrorState message={t("aiAgents.conversationsPermissionDenied")} />
             ) : sectionLoading ? (
               <LoadingState label={t("aiAgents.sectionLoading")} />
             ) : sectionError ? (
@@ -243,12 +215,10 @@ export function AIAgentsWorkspace({
               />
             ) : activeSection === "profile" ? (
               <ProfileManagerSection
-                bot={selectedBot}
                 botDraft={botDraft}
                 setBotDraft={setBotDraft}
                 form={profileForm}
                 setForm={setProfileForm}
-                updateBot={updateBot}
                 canManage={canManage}
               />
             ) : activeSection === "channels" ? (
@@ -265,27 +235,19 @@ export function AIAgentsWorkspace({
               <KnowledgeSection businessId={businessId} items={knowledgeItems} canManage={canManage} />
             ) : activeSection === "actions" ? (
               <AgentActionsSection
-                bot={selectedBot}
+                botDraft={botDraft}
+                setBotDraft={setBotDraft}
                 form={profileForm}
                 setForm={setProfileForm}
-                updateBot={updateBot}
                 canManage={canManage}
               />
             ) : (
               <TestAndLaunchSection
                 bot={selectedBot}
-                channelsCount={channels.length}
-                activeChannelsCount={activeChannelsCount}
                 onboardingSteps={onboardingSteps}
                 launchReady={launchReady}
-                latestConversation={latestConversation}
-                latestMessages={latestMessages}
-                suggestedReply={suggestedReply}
-                isSuggesting={suggestReplyPending}
-                canSuggest={canSuggest}
-                onSuggest={() => {
-                  if (latestConversation) onSuggest(latestConversation.id);
-                }}
+                dirty={dirty}
+                canTest={canManage && canSuggest}
               />
             )}
           </AIAgentEditorShell>

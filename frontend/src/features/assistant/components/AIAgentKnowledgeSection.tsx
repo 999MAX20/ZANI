@@ -63,6 +63,7 @@ export function KnowledgeSection({ businessId, items, canManage }: { businessId:
   return (
     <>
       <div className="space-y-4">
+        <StatusNotice compact tone="info" title={t("aiSetup.sourceTitle")} description={t("aiSetup.sourceText")} />
         <StatusNotice
           compact
           tone="info"

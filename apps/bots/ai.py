@@ -27,9 +27,11 @@ def get_agent_profile(conversation):
     )
 
 
-def suggest_bot_reply(*, conversation, user=None, auto_mode=False, qualification=None):
-    message_context = build_bot_conversation_context(conversation)
-    scheduling_context = build_bot_scheduling_context(conversation, qualification=qualification)
+def suggest_bot_reply(*, conversation, user=None, auto_mode=False, qualification=None, message_context=None):
+    # Explicit context permits a draft-agent preview without persisted Inbox data.
+    scheduling_context = build_bot_scheduling_context(conversation, qualification=qualification, message_context=message_context)
+    if message_context is None:
+        message_context = build_bot_conversation_context(conversation)
     sales_playbook = build_sales_playbook_context(conversation.business) if auto_mode else {}
     bot_settings = validate_ai_settings(conversation.bot.settings_json)
     model = bot_settings.get("model") if isinstance(bot_settings.get("model"), str) else None
@@ -75,6 +77,7 @@ def suggest_bot_reply(*, conversation, user=None, auto_mode=False, qualification
 
     user_input = agent_instruction + reply_instruction + f"Last inbound message: {last_inbound['text'] if last_inbound else 'No inbound message'}"
     user_input += " Prices in price_from are minimum prices: say 'от', not a guaranteed final price. Booking is performed by staff; never claim you booked, cancelled or transferred anything."
+    user_input += " Use scheduling_context.currency for every price; never infer currency from the message language. Interpret relative dates using scheduling_context.local_date and timezone. next_available_slots are confirmed free slots on their stated dates; do not say a requested date is unavailable when those slots include it."
     crm_context = {}
     if conversation.client_id:
         crm_context["client"] = {
@@ -108,6 +111,7 @@ def suggest_bot_reply(*, conversation, user=None, auto_mode=False, qualification
         input_json={
             "bot_id": conversation.bot_id,
             "conversation_id": conversation.id,
+            "is_preview": conversation.pk is None,
             "channel": conversation.channel,
             "messages": message_context,
             "agent_profile": agent_payload,
@@ -124,6 +128,7 @@ def suggest_bot_reply(*, conversation, user=None, auto_mode=False, qualification
         model=model,
         model_tier=model_tier,
         temperature=temperature,
+        response_language=agent_profile.language if agent_profile else conversation.bot.default_language,
     )
     sources = [
         {
@@ -132,7 +137,7 @@ def suggest_bot_reply(*, conversation, user=None, auto_mode=False, qualification
             "label": f"Message #{message['id']}",
         }
         for message in message_context
-        if message["direction"] == BotMessage.Directions.INBOUND
+        if message["direction"] == BotMessage.Directions.INBOUND and message.get("id") is not None
     ]
     if agent_payload:
         sources.append(

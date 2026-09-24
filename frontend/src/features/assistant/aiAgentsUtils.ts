@@ -7,9 +7,9 @@ export const defaultAllowedTools = ["create_lead", "create_task", "create_deal",
 
 export const sections: Array<{ id: AgentSection; labelKey: string; titleKey: string; icon: typeof Settings }> = [
   { id: "profile", labelKey: "aiAgents.section.profile", titleKey: "aiAgents.profileTitle", icon: Bot },
-  { id: "channels", labelKey: "aiAgents.section.channels", titleKey: "aiAgents.channelsTitle", icon: Radio },
   { id: "knowledge", labelKey: "aiAgents.section.knowledgeSimple", titleKey: "aiAgents.knowledgeTitle", icon: BookOpen },
   { id: "actions", labelKey: "aiAgents.section.actions", titleKey: "aiAgents.actionsTitle", icon: FunctionSquare },
+  { id: "channels", labelKey: "aiAgents.section.channels", titleKey: "aiAgents.channelsTitle", icon: Radio },
   { id: "test", labelKey: "aiAgents.section.test", titleKey: "aiAgents.testTitle", icon: MessageSquareText },
 ];
 
@@ -55,15 +55,15 @@ export function formFromProfile(profile: AgentProfile): AgentFormState {
 export function createDefaultProfile(bot: BotType | null | undefined, t: (key: string) => string): AgentFormState {
   return {
     id: null,
-    name: bot ? `${bot.name} ${t("aiAgents.profileSuffix")}` : t("aiAgents.defaultName"),
+    name: bot?.name || t("aiAgents.defaultName"),
     bot: bot ? String(bot.id) : "",
-    role_description: t("aiAgents.defaultRoleDescription"),
+    role_description: t("aiSetup.dentalRole"),
     tone: "friendly",
     language: bot?.default_language || "ru",
     is_active: true,
-    system_prompt: t("aiAgents.defaultSystemPrompt"),
+    system_prompt: t("aiSetup.dentalPrompt"),
     rules_text: t("aiAgents.defaultRules"),
-    escalation_text: t("aiAgents.defaultEscalation"),
+    escalation_text: t("aiSetup.dentalEscalation"),
     allowed_tools: defaultAllowedTools,
   };
 }
@@ -121,20 +121,17 @@ export function getOnboardingSteps({
   profileReady,
   hasActiveChannel,
   hasKnowledge,
-  hasTestDialog,
   t,
 }: {
   botId: Id;
   profileReady: boolean;
   hasActiveChannel: boolean;
   hasKnowledge: boolean;
-  hasTestDialog: boolean;
   t: (key: string) => string;
 }): OnboardingStep[] {
   return [
     { done: profileReady, title: t("aiAgents.checklist.profile"), text: t("aiAgents.checklist.profileText"), href: `/app/ai-agents/${botId}/profile` },
     { done: hasKnowledge, title: t("aiAgents.checklist.knowledge"), text: t("aiAgents.checklist.knowledgeText"), href: `/app/ai-agents/${botId}/knowledge` },
     { done: hasActiveChannel, title: t("aiAgents.checklist.channel"), text: t("aiAgents.checklist.channelText"), href: `/app/ai-agents/${botId}/channels` },
-    { done: hasTestDialog, title: t("aiAgents.checklist.test"), text: t("aiAgents.checklist.testText"), href: `/app/ai-agents/${botId}/test` },
   ];
 }

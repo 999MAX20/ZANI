@@ -57,6 +57,7 @@ export function AIAgentEditorShell({
   const { t } = useI18n();
   const runtimeBlocked = bot.status === "active" && Boolean(bot.readiness && !bot.readiness.is_ready);
   const statusLabel = agentStatusLabel(bot, t);
+  const nextSection = sections[sections.findIndex((section) => section.id === activeSection) + 1];
 
   return (
     <section
@@ -90,7 +91,7 @@ export function AIAgentEditorShell({
               <span className="text-xs font-semibold text-zani-subtle">{statusLabel}</span>
               <Switch
                 checked={bot.status === "active"}
-                disabled={!canManage || activationBlocked}
+                disabled={!canManage || activationBlocked || (dirty && bot.status !== "active")}
                 isLoading={isSaving}
                 label={t("aiAgents.statusSwitch", { name: bot.name })}
                 onChange={onToggleStatus}
@@ -122,10 +123,10 @@ export function AIAgentEditorShell({
         aria-labelledby={`ai-agent-editor-tab-${activeSection}`}
         className="min-h-0 flex-1 overflow-visible bg-surface-warm p-3 sm:p-4 xl:overflow-y-auto"
       >
-        <div className="mx-auto w-full max-w-[1280px]">{children}</div>
+        <fieldset disabled={isSaving} className="mx-auto min-w-0 w-full max-w-[1280px]">{children}</fieldset>
       </div>
 
-      {canManage && showFooter ? (
+      {canManage && (showFooter || nextSection) ? (
         <footer className="flex shrink-0 flex-col gap-3 border-t border-zani-border bg-surface-card px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
           <p className="min-h-5 text-xs font-medium text-zani-subtle" aria-live="polite">
             {dirty
@@ -135,12 +136,13 @@ export function AIAgentEditorShell({
                 : ""}
           </p>
           <div className="grid grid-cols-2 gap-2 sm:flex">
-            <Button type="button" variant="secondary" disabled={!dirty || isSaving} onClick={onReset}>
+            {showFooter ? <><Button type="button" variant="secondary" disabled={!dirty || isSaving} onClick={onReset}>
               {t("common.cancel")}
             </Button>
             <Button type="button" disabled={!dirty || saveDisabled} isLoading={isSaving} onClick={onSave}>
               {t("aiAgents.saveChanges")}
-            </Button>
+            </Button></> : null}
+            {nextSection ? <Button type="button" variant="secondary" disabled={isSaving} onClick={() => onSectionChange(nextSection.id)}>{t("aiSetup.next", { section: t(nextSection.labelKey) })}</Button> : null}
           </div>
         </footer>
       ) : null}

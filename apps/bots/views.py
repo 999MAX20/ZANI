@@ -1,4 +1,5 @@
 from apps.bots.ai import suggest_bot_reply
+from apps.bots.preview import preview_agent_dialogue
 from apps.bots.channel_actions import (
     configure_instagram_action,
     configure_telegram_action,
@@ -20,6 +21,7 @@ from apps.bots.serializers import (
     EnsureBotChannelSerializer,
     BotMessageSerializer,
     BotSerializer,
+    AgentPreviewSerializer,
     PublicWebsiteChatChannelSerializer,
     PublicWebsiteChatConversationCreateSerializer,
     PublicWebsiteChatMessageCreateSerializer,
@@ -55,6 +57,7 @@ class BotViewSet(TenantModelViewSet):
         "activate": Actions.MANAGE,
         "pause": Actions.MANAGE,
         "ensure_channel": Actions.MANAGE,
+        "preview": Actions.MANAGE,
     }
 
     def perform_create(self, serializer):
@@ -90,6 +93,15 @@ class BotViewSet(TenantModelViewSet):
             write_audit_log(self.request, AuditLog.Actions.UPDATE, bot, metadata=metadata)
             write_activity_event(self.request, "bot.updated", bot, metadata=metadata)
         return Response(self.get_serializer(bot).data)
+
+    @action(detail=True, methods=["post"])
+    def preview(self, request, pk=None):
+        bot = self.get_object()
+        assert_can(request.user, bot.business, Resources.AI_AUTOMATION, Actions.MANAGE, obj=bot)
+        assert_can(request.user, bot.business, Resources.AI_ASSISTANT, Actions.SUGGEST, obj=bot)
+        serializer = AgentPreviewSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return Response(preview_agent_dialogue(bot=bot, user=request.user, **serializer.validated_data))
 
     @action(detail=True, methods=["post"])
     def activate(self, request, pk=None):

@@ -56,6 +56,17 @@ Working-DB migrations and removal of old trees need their own agreed scope/check
   newer timestamp nor an index resolves policy conflict. For unresolved permission,
   lifecycle, data-loss or external-effect policy, obtain an owner decision before
   dependent changes; continue independent authorized work.
+- Owner clarification 2026-09-25: first check already-approved decisions, then
+  classify only the unresolved question. A: foundational money/architecture/security
+  decisions precede dependent implementation. B: ambiguous business policy blocks
+  only the affected scenario; request a short decision with options and consequences.
+  C: safely apply established rules without inventing policy or adding approval
+  loops for routine/cosmetic work. Fix proven bugs within the authorized phase;
+  categories do not authorize a new phase or let the agent choose major policy.
+- Keep established staff rules: disabling login does not disable the specialist;
+  history/appointments remain and a manager reassigns work manually. Overlap and
+  AI staff-action rules remain. The annotation's automatic transfer of tasks to
+  an administrator is a hypothetical example, not an approved override.
 
 ## 3. Product and engineering invariants
 

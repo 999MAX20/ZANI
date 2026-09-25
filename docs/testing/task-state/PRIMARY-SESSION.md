@@ -2,6 +2,50 @@
 
 Дата: 2026-09-24. Это карточка исполнения, не продуктовый backlog.
 
+## Pilot owner annotations — DOCS VERIFIED; publication tracked in receipt, 2026-09-25
+
+- Source: owner explicitly asked to analyze attached annotations and document the
+  answers; registered Orchestrator supplied six annotated decisions and delegated
+  docs-only changes to sole CRM writer 01a0d6c1-3ee4-7f92-b94c-0242bb2eb35e.
+- Root/owner/base: C:\Users\user\Desktop\Zani, codex/ui-testing-toolkit,
+  clean f8a40697ffddeffd247d67234d816846ee87cf50, registry generation 2 / idle.
+  Native inventory shows this writer and the read-only Orchestrator; no other CRM
+  writer. Starting snapshot: output/pilot-decisions-20260925/starting-snapshot.json.
+- Mode/gap: document approved product decisions and unresolved policy details;
+  existing V1/pilot/billing/AI/infra contracts reused, no competing backlog.
+- Scope: V1_PRODUCT_RULES, local-crm-completion, billing/entitlements,
+  AI_ASSISTANT_RULES, production-readiness, STATUS, project handoff, this checkpoint
+  and concise AGENTS decision routing. No registry/hooks/runtime/DB/server changes.
+- Acceptance: distinguish decisions/examples/proposals/unknowns for all six topics:
+  seats and specialist thresholds; Platforma payment processing; logical AI unit
+  and cost vs charge; ACTIVE/GRACE/READ_ONLY; shared SaaS operations; A/B/C decisions.
+  Preserve PAYG/no hard AI package and staff-action/manual reassignment rules;
+  partially resolve O01-O04 without inventing prices, vendor or edge policies.
+- Contract impacts: future subscription access, AI usage, notifications and
+  operational acceptance clarified only; no runtime permission/BusinessEvent/AI/
+  migration/env effect, payment, provider call, deployment or purchase performed.
+- Non-goals: pricing/market research, billing/infra implementation, CRM acceptance,
+  live connections, paid calls, new tasks/handoffs or old-task reopening.
+- Required gate: all local links/anchors, cross-contract consistency and six-topic
+  classification review; historical evidence preservation; working/index/real-range
+  diff hygiene, explicit reviewed docs commit, normal push main and SHA readback;
+  actual CI reported separately without adding a full-CI wait to docs acceptance.
+- Implemented: all six decisions recorded in the existing nine documents; prices,
+  weights, provider and unresolved edge policies remain open. PAYG retained;
+  proposed packages are not approved. No product acceptance reopened or started.
+- Verification: `.venv\Scripts\python.exe -X utf8 output/pilot-decisions-20260925/verify_docs.py`
+  checks 132 local links/anchors, exact scope/owner/root/branch, untracked files,
+  working/index and real committed-range hygiene. Final results and document hashes
+  are in output/pilot-decisions-20260925/docs-gate.json.
+  Six-topic consistency, examples vs decisions, entire intended diff and secrets
+  review passed; historical plan/closure table and prior evidence remain unchanged.
+- Skipped: application tests/build/install, runtime/provider/live checks and DB
+  operations because this scope changes documentation only. No deployment claimed.
+- Delivery: scoped commit, normal push HEAD:main, remote SHA readback and actual CI
+  recorded in output/pilot-decisions-20260925/result.json; COMPLETE_PUBLISHED closes
+  this documentation task. CI is observed without a full-CI wait, not presumed green.
+- Next: stop after publication. Internal CRM-cycle acceptance remains unstarted.
+
 ## Pilot plan refresh — DOCS VERIFIED; publication tracked in receipt, 2026-09-25
 
 - Source: owner asked the registered Orchestrator for an up-to-date remaining

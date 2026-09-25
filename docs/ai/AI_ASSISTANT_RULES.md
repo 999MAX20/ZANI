@@ -177,6 +177,13 @@ Every auto-pipeline decision must store a `confirmation_policy` payload that nam
 
 ## CRM Pipeline Rules
 
+The target [subscription access policy](../billing/entitlements.md#commercial-decisions-20260925)
+also applies: READ_ONLY allows technical inbound persistence but no CRM sales
+pipeline, outgoing client messages, new paid AI calls or business automations.
+Rules below for staff replies/drafts assume subscription access permits the
+action. This 2026-09-25 requirement does not claim that the existing pipeline
+already implements every subscription transition or unknown-sender mapping.
+
 For conversation -> CRM pipeline flows:
 
 1. AI can extract intent, service, budget, preferred time, contact data and urgency.
@@ -227,6 +234,49 @@ When using an external AI provider, log:
 - business/user scope.
 
 Do not log raw sensitive customer messages unless retention and privacy rules allow it.
+
+<a id="ai-billable-operation-20260925"></a>
+
+### Logical AI action and charge — owner decision 2026-09-25
+
+**Decision:** the customer billing unit is one completed useful user AI action,
+not a message, token, internal LLM call or a whole conversation by assumption.
+Examples are a bot reply, an assistant-produced answer/summary/draft, or an
+analyst's analysis. Several model/tool calls within that operation do not create
+several customer charges. Producing a draft does not authorize its CRM execution:
+the staff-confirmation and staff-only action matrix remains unchanged.
+
+Store provider cost separately from customer charge. Keep necessary organization/
+operation identifiers, feature, model, input/output tokens, tool usage, provider
+cost, status and billable classification with protected data and scoped access.
+Use minimal necessary identifiers; no secrets or unnecessary patient/message
+contents. Provider costs for attempts are retained even when customer charge is
+zero. Logging costs/usage does not establish a wallet, money deduction or billing
+acceptance; existing per-request counters are not automatically billable actions.
+
+Errors are not billable. Automatic retry and webhook replay are not new actions;
+record attempts and charge idempotently by logical operation. `org + event +
+operation` is an illustrative identity, not a universal key for manual actions.
+Keep a verifiable charge history and the version of price/operation weight that
+applied, rather than silently recalculating historical charges at a later tariff.
+
+**Proposals/conflict:** different operation weights (such as 1/5/10), uniform
+pilot weight 1 and prices are not approved. Proposed action packages conflict
+with the last explicit PAYG/no-ceiling/no-hard-package decision; preserve PAYG
+and request a separate decision if packages are pursued. No technical security
+or abuse guard is removed by this commercial policy.
+
+**Open success boundaries:** generated-but-undelivered output, rejected suggestions,
+invalid output, user/client retries, work crossing subscription expiration and
+long-running analyses. Do not silently classify all of these as billable success
+or promise semantic correctness. The principle "errors are not billed" is fixed;
+the operation's exact success/charge transition still requires its contract.
+
+[Subscription access](../billing/entitlements.md#commercial-decisions-20260925)
+pauses new paid AI calls in READ_ONLY while preserving technical inbound storage.
+GRACE keeps ordinary access and separate AI accounting; separate AI-debt and
+in-flight restoration details remain open. This documentation does not change
+the existing model calls, counters, prices, permissions or approved evidence.
 
 ## V1 quality contract — 2026-09-22
 

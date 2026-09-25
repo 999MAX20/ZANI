@@ -4,6 +4,53 @@ Date: 2026-05-20
 
 This document is the operational checklist for moving Zani from local MVP to staging and then production.
 
+<a id="pilot-operations-20260925"></a>
+
+## Paid-pilot operations — owner decisions 2026-09-25
+
+Authority: [V1 requirements](../product/V1_PRODUCT_RULES.md) and the owner's fifth
+annotation. These are required outcomes for a separately authorized rollout,
+not provisioned infrastructure or evidence that production is accepted.
+
+- **One shared multi-tenant SaaS:** organizations share the platform, with Business
+  isolation for data, credentials and channels. Do not deploy a separate CRM copy
+  for each clinic. WhatsApp numbers/accounts, Instagram and Telegram accounts
+  belong to the clinic, not the developer's personal account. Website form intake
+  must have an explicit organization mapping. Existing tenant/role guards remain.
+- **Separate DEV/STAGING/PRODUCTION and secrets:** development/local and staging
+  are not interchangeable with the real clinic's data or credentials. The accepted
+  minimum includes PostgreSQL, Redis/queues, workers/scheduler, private object
+  storage with authorization, transactional email and monitoring/alerts.
+- **Durable inbound and dispatch:** verify provider signatures/authentication and
+  idempotency, persist accepted webhook/message work reliably, acknowledge promptly,
+  then process in the background. A failure between storage and enqueueing must
+  not lose work; require durable dispatch/recovery. Compare existing services and
+  queue mechanisms before choosing an implementation; this is not a mandated new
+  architecture or authority to rewrite the pipeline. Subscription READ_ONLY keeps
+  technical ingress but pauses business automation under the
+  [access contract](../billing/entitlements.md#commercial-decisions-20260925).
+- **Operational evidence:** monitor more than up/down: queue age, failures/retries
+  and channel/AI/email/storage/backup state. Backups need a real restore drill.
+  Deployment must be reproducible, with health/readiness and rollback. Prove the
+  end-to-end channel → CRM → AI/staff → delivered response and recovery path in the
+  authorized target, as well as the applicable [paid-beta gates](paid-beta-gate.md).
+- **Named responsibilities needed:** a clinic contact and technical incident owner
+  must exist; no person is assigned by these annotations. Define the response and
+  recovery evidence for the selected environment before real-data admission.
+
+**Examples/proposals, not chosen resources:** Cloudflare, `platforma.kz`, Telegram
+alerts and one VPS. No domain ownership, purchase, hosting configuration or alert
+subscription is confirmed. Kubernetes and microservices are not requirements.
+The provider lists and instance profiles below are reference recommendations,
+not an approved purchase/topology for this clinic; a future choice must still
+satisfy the applicable operational gates.
+
+**Still open:** domain, provider, region, budget, clinic and named operators,
+RPO/RTO, retention and the legal/data-handling regime for real information.
+Do not infer medical records or treatment plans from mention of patient files.
+No deployment, purchase, live connection, migration or secret read is authorized
+by this document update.
+
 For the 10,000 merchants audit and sizing plan, also use:
 
 ```text

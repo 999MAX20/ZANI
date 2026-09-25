@@ -1,26 +1,98 @@
 # Entitlements And Billing Enforcement
 
-Phase 7 turns subscription plans from display-only data into enforceable product limits.
+This document distinguishes the approved commercial contract from the historical
+entitlement implementation inventory below. Documentation is not billing acceptance.
+
+<a id="commercial-decisions-20260925"></a>
 
 ## Owner-approved V1 commercial model — 2026-09-16
 
-Read [V1 product rules](../product/V1_PRODUCT_RULES.md), section 8. The primary
-subscription is priced by employee count; AI is billed separately for actual
-usage under explicit per-request tariffs, without a monetary spending ceiling
-or an approved hard request package. This final owner decision supersedes the
-earlier questionnaire answer about a hard AI limit.
+Clarified by the owner's six annotations on 2026-09-25. Authority:
+[V1-B01–B04 and remaining decisions](../product/V1_PRODUCT_RULES.md#owner-decisions-20260925).
+The statements below are target requirements, not implemented/verified states.
 
-Subscription payment/activation is automatic. Expiry has a three-day grace
-period followed by read-only access. The payment provider, prices, billable
-request definition, failed/retried request accounting, seat counting and exact
-read-only/background behavior remain open; do not infer them from old defaults.
+### Seats, specialist thresholds and separate AI
+
+- **Decision:** a billable employee is a user with an account and CRM role.
+  A specialist Resource without an account is not a paid seat. Plans must also
+  account for thresholds on these specialists; this does not turn Resources into seats.
+- AI is outside the base CRM subscription. Listing administrator/operator/owner/
+  manager roles does not impose tariff-specific role permissions.
+- **Illustrations only:** up to 5/10 specialists, 20/25 thousand per employee,
+  30 thousand AI, 130 thousand total and AI quantities 1000/5000/10000 are not
+  accepted prices, tiers, included accounts or packages.
+- **Open analytical package:** compare product value and economics before proposing
+  prices, specialist tiers, included accounts/features, overage/downgrade and
+  proration. Invited/inactive accounts and within-period changes still need rules.
+  No pricing or market research is performed by this documentation task.
+
+AI remains PAYG without a monetary ceiling or approved hard request package.
+The logical billable unit, provider cost/customer charge separation, attempt
+history, idempotency and price/weight versioning are specified in the
+[AI operation contract](../ai/AI_ASSISTANT_RULES.md#ai-billable-operation-20260925).
+The annotation's package option conflicts with the last unambiguous PAYG decision;
+retain PAYG until separately resolved. Neither example weights 1/5/10 nor uniform
+pilot weight 1 is approved. Cost logging is not a wallet or a completed charge flow.
+
+### Platforma payment processing
+
+This is the clinic paying for **Platforma CRM/AI**, not the clinic collecting
+patient money. Platforma billing calculates subscription, usage and customer
+charges; the payment provider processes payment. Keep manual patient payments
+and financial clinic KPIs under their existing separate contracts.
+
+Provider selection requirements: KZT payments for a Kazakhstan legal entity; card/hosted
+checkout; tokenization with no card data stored by Platforma; recurring with
+customer consent; API; verifiable successful/failed webhooks; refund; stable
+identifiers and reconciliation. A vendor is not selected here. Recurring is
+preferred; manual payment is not an accepted replacement.
+
+Required flow: calculation → payment → verified confirmation → activation/renewal.
+Handle failed attempts explicitly. Browser redirects and an illustrative event
+name such as `payment.success` do not prove payment: apply the selected provider's
+verified event/transaction contract and reconciliation. Billing and access must
+not be derived solely from the last attempted payment.
+
+The merchant's **Subscription and payment** surface must show plan, employees,
+AI usage/charges, date and history. This is a target user flow, not a claim that
+the current quota cards already provide it. Provider, prepay/postpay, variable
+recurring amount/authorization, exact consent, renew/failure/refund transitions
+and reconciliation details remain open before dependent implementation.
+
+### Decision 4 — subscription access
+
+Access sequence after the paid term: `ACTIVE → GRACE (3 days) → READ_ONLY`.
+`billing_status` and `access_status` are separate concepts; names are not a mandated
+schema or enum. One failed attempt does not remove the already paid-through term.
+
+| Capability | ACTIVE and GRACE | READ_ONLY |
+| --- | --- | --- |
+| Ordinary CRM reads/writes and outgoing client messages | Normal access within existing tenant/role rights, manual pauses and channel state; GRACE adds notifications and controlled payment retries | Preserve data/history and authorized viewing; reject user CRM writes and outgoing client messages |
+| New paid AI calls and business automations | Normal rules; AI usage remains separately accounted for during GRACE | Suspended; do not start a sales pipeline from allowed ingress |
+| Inbound webhooks/messages | Normal intake with existing guards | Continue authenticated/idempotent technical receipt and persistence; mapping an unknown sender to a client needs the ingress contract, not automatic Lead creation |
+| Billing and payment recovery | Available | Available |
+| Audit, backup, monitoring, security and other system operations | Continue | Continue |
+
+Recheck subscription access at action execution, not only when a job is queued.
+Preserve the fact/reason of a skipped action; `SKIPPED_SUBSCRIPTION_INACTIVE` is
+an example, not a prescribed enum. After verified successful payment, restore
+ACTIVE automatically without removing manual pauses, permissions or channel
+failures. Do not mass-replay overdue jobs or send old messages. This does not
+decide in-flight work, a separate AI debt, or every job's recovery policy.
+
+**O04 is partially resolved:** the main access/ingress/system-operation policy
+above is approved. Timezone and the exact three-day clock, retry schedule,
+paid-through cancellation/refund handling, in-flight expiration/work, separate
+AI debt/reactivation and payment ordering for AI used during GRACE remain open.
+Preserve user data; subscription expiry is not a deletion/retention instruction.
+
+### Implementation boundary
 
 The quota inventory and historical verification below describe the existing
-foundation, not certification of the new commercial model. No guards or defaults
-were removed by this documentation change. Preserve authorization, abuse/rate
-controls and retry safety; reconcile commercial AI quota behavior in a separately
-approved implementation task. This does not authorize changing code, making
-payments or declaring existing limits compliant.
+foundation. They do not prove compliance with logical AI billing or the access
+state machine above. No guards/defaults were removed; authorization, abuse/rate
+controls and retry safety remain. Compare existing services before a separately
+authorized implementation; no payment, code, DB or deployment is authorized here.
 
 ## Goal
 

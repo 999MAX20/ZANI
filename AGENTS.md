@@ -104,7 +104,7 @@ For defect fixes, UI/UX audits or functional certification read
 | Work/question | Authority |
 | --- | --- |
 | Project identity/routing | `actual_docs/README.md`, `actual_docs/PROJECT_HANDOFF.md` |
-| Pre-pilot order / backend gaps | `actual_docs/PRE_PILOT_CODE_READINESS_MASTER.md`, `docs/pilot/backend-open-logic-register.md` |
+| Pre-pilot order / backend gaps | `docs/pilot/local-crm-completion.md` (current pilot plan), `actual_docs/PRE_PILOT_CODE_READINESS_MASTER.md`, `docs/pilot/backend-open-logic-register.md` |
 | Functional / recovery acceptance | `actual_docs/APP_FUNCTIONAL_CERTIFICATION.md`, `actual_docs/UNIFIED_FALLBACK_EXPERIENCE_PLAN.md` |
 | CRM behavior | `docs/crm/CRM_PRODUCTION_LAYER_PLAN.md`, `docs/security/PERMISSION_MATRIX.md`, `docs/ai/AI_ASSISTANT_RULES.md`, `docs/automation/automation-runtime.md`, `docs/billing/entitlements.md` |
 | Frontend | `docs/frontend/design-system.md`, `plan/ui_ux_design_system_reform.md` |

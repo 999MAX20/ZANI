@@ -2,6 +2,57 @@
 
 Дата: 2026-09-24. Это карточка исполнения, не продуктовый backlog.
 
+## Pilot plan refresh — DOCS VERIFIED; publication tracked in receipt, 2026-09-25
+
+- Source: owner asked the registered Orchestrator for an up-to-date remaining
+  implementation plan and paid-pilot scope; delegated docs-only to the sole CRM writer.
+- Owner: 01a0d6c1-3ee4-7f92-b94c-0242bb2eb35e, registry generation 2 / idle;
+  canonical C:\Users\user\Desktop\Zani, branch codex/ui-testing-toolkit,
+  clean base 665a675c0529f75e2dcd64a2b93f7ba0fbca78ae. Native task inventory shows
+  this CRM writer and the read-only Orchestrator, no competing CRM writer.
+- Mode/gap: documentation; stale statuses and routing, not new product implementation.
+  Reuse docs/pilot/local-crm-completion.md as the only plan, V1 requirements,
+  existing FC/BE/FB contracts and available published/CI receipts. Preserve history.
+- Scope: existing pilot plan, STATUS, project handoff, this checkpoint, and targeted
+  docs-index/AGENTS routing only. No registry/hooks/runtime/DB/deployment, app tests,
+  paid AI calls, new tasks or archives. Runtime/permission/event/notification impact: none.
+- Acceptance: one clinic's paid-pilot goal and complete V1 scope; verified closures
+  with publication/CI evidence; remaining code/acceptance/environment/decision gaps,
+  dependencies, completion criteria and next actions; owner questions separated.
+  Recommend internal CRM-cycle acceptance first, without starting it. Preserve all
+  mandatory V1 channels; Telegram/form exception is not approved. No new policies.
+- Required checks: all local Markdown targets/anchors, consistency and entire diff/
+  new-file review; working, staged and real committed-range hygiene; scoped conventional
+  commit, normal push to origin/main, exact SHA readback; report CI without waiting
+  for full app CI as a new docs-only prerequisite.
+- Starting snapshot: output/pilot-plan-20260925/starting-snapshot.json.
+- Implemented: current dated plan in the existing file, published/CI closure table,
+  gap/dependency/acceptance/next-action matrix, one recommended internal CRM-cycle
+  acceptance phase and separate owner decisions. All mandatory V1 channels retained;
+  old inventory/evidence preserved verbatim in a labeled collapsed historical section.
+  STATUS/handoff/index/AGENTS route to this plan; execution/product rules unchanged.
+- Evidence read: git-publication-20260921, v1-scheduling-20260921,
+  v1-finance-source-20260922, ai-confirmation-20260922, ai-quality-20260922 and
+  agent-setup-20260924 final receipts. Published SHA/readback/CI success is explicit;
+  AI quality is feeb006, not its earlier code candidate. No deployment inferred.
+- Static source cross-check: existing billing quotas, financial-source contract,
+  semantic action registry, Telegram setup/API/provider/tests, and current product,
+  certification, automation, billing and operational requirements. This is evidence
+  reconciliation, not a fresh runtime certification or blanket missing-code claim.
+- Verification: `.venv\Scripts\python.exe -X utf8 output/pilot-plan-20260925/verify_docs.py`
+  PASS: all 104 local Markdown targets/anchors, original historical body equality,
+  owner/root/branch/exact six paths/no untracked drift, working/index hygiene.
+  Separate receipt/ancestry read check PASS for all six published closure SHAs.
+  Full intended diff, command examples, V1/FC/BE consistency and secrets review PASS;
+  no execution/product policy changed, no unresolved work marked complete.
+- Skipped: application tests/build/install/live calls/deploy/DB operations; docs only,
+  runtime inputs unchanged. New automatic full CI is observed, not a docs-only gate.
+- Delivery: final staged/committed-range checks, scoped commit, normal push/readback
+  and actual CI in output/pilot-plan-20260925/result.json. COMPLETE_PUBLISHED closes
+  this documentation phase; a failed check/push remains a publication blocker.
+  After delivery stop. Internal CRM-cycle acceptance is the recommended next phase,
+  not started; no application checks or future phase execution in this task.
+
 ## Explicit handoff generation 1 → 2 — RELEASED, 2026-09-25
 
 - Authorization: owner explicitly said «Передай работу новому чату».

@@ -8,7 +8,7 @@ contracts; detailed technical documentation and evidence retain their owners.
 
 ## Current backend boundary and documentation status
 
-- [Local CRM completion and clinic admission, 2026-09-21](pilot/local-crm-completion.md) — finite remaining business cycles, existing IDs/code, current verification and two acceptance boundaries; not automatic implementation authorization.
+- [Paid pilot plan for one clinic, 2026-09-25](pilot/local-crm-completion.md#current-plan) — V1 scope, published closures, remaining code/acceptance/environment/decision gaps, dependencies and proposed order; internal CRM-cycle acceptance recommended next, not started. Historical inventory is preserved separately in the same document.
 - [Backend development audit, 2026-09-14](pilot/backend-development-audit.md) — implemented vs WIP vs missing evidence; not a second task queue.
 - [Backend open logic register](pilot/backend-open-logic-register.md) — canonical backend gap IDs.
 - [Technical documentation audit](operations/technical-documentation-audit.md) — 105 source documents and archive decisions.

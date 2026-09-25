@@ -1,5 +1,12 @@
 # AI Assistant And AI Analyst Rules
 
+> **Later commercial decision, 2026-09-25:**
+> [CRM packages include AI volume; billing work deferred](../billing/BILLING_DISCUSSION_DEFERRED_2026-09-25.md).
+> This supersedes separate-AI/PAYG/no-package wording below. The client bot's unit
+> is a completed dialogue with one client in one day; formal boundaries remain open.
+> AI exhaustion pauses AI, not paid manual CRM. Assistant/analyst limits are open;
+> grounding, staff approval, error/retry principles and historical evidence remain.
+
 V1-M01/M02 (2026-09-22): BusinessEvent Analyst is operational only. Generic sale
 events, service/deal values and manual payments do not certify receipts/refunds.
 Its event payload excludes financial fields and its source policy forbids

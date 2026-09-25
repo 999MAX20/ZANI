@@ -1,5 +1,12 @@
 # Entitlements And Billing Enforcement
 
+> **Commercial decision superseded, later on 2026-09-25:** the
+> [deferred billing discussion](BILLING_DISCUSSION_DEFERRED_2026-09-25.md) replaces
+> the earlier separate-AI/PAYG/no-package statements below with a CRM package
+> including AI volume. AI exhaustion pauses AI only; paid manual CRM continues.
+> Pricing and billing work are deferred. Other rules and historical evidence,
+> including CRM expiry GRACE/READ_ONLY, remain; this is not runtime acceptance.
+
 This document distinguishes the approved commercial contract from the historical
 entitlement implementation inventory below. Documentation is not billing acceptance.
 

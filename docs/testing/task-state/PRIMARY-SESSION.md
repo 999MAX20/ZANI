@@ -2,6 +2,37 @@
 
 Дата: 2026-09-24. Это карточка исполнения, не продуктовый backlog.
 
+## Billing discussion deferred — DOCS VERIFIED; publication tracked in receipt, 2026-09-25
+
+- Source: owner through registered Orchestrator deferred tariffs/billing and asked
+  to preserve the latest discussion; packages replace the earlier PAYG decision.
+- Owner/root/base: 01a0d6c1-3ee4-7f92-b94c-0242bb2eb35e, generation 2 / idle;
+  C:\Users\user\Desktop\Zani, codex/ui-testing-toolkit, clean
+  2b5273b714700d03cb6098ec991948e0e8f9482a. Sole writer; Orchestrator read-only.
+- Mode/gap: documentation/policy; reuse billing/V1/AI/pilot contracts. One short
+  billing note plus notices in seven routing/contracts and this checkpoint.
+  Snapshot: output/billing-deferred-20260925/starting-snapshot.json.
+- Acceptance: latest package/customer-day direction, AI-only exhaustion/top-up,
+  illustrative prices, unresolved details and deferred work explicitly recorded;
+  previous commercial direction superseded, other rules/history preserved.
+  Static code observations attributed to 2b5273b, not runtime defect findings.
+- Non-goals: implementation, pricing research, provider/payment/runtime/DB activity,
+  new phase or task queue. No runtime permission/notification/BusinessEvent/AI/env impact.
+- Required: local links/anchors, consistency and new-file/full diff review, working/
+  staged/real-range hygiene; scoped commit, normal push main, SHA readback, actual CI.
+- Implemented: docs/billing/BILLING_DISCUSSION_DEFERRED_2026-09-25.md and seven
+  explicit supersession notices/routes; earlier contract/history bodies retained.
+  Source references corrected to BotConversation, inbox/outbound delivery and usage.
+- Verification: `.venv\Scripts\python.exe -X utf8 output/billing-deferred-20260925/verify_docs.py`
+  PASS: 150 local links/anchors, owner/root/branch/exact nine paths, preservation
+  of prior contract/history lines and working/index hygiene; real range checked
+  after commit. Full diff/new note, examples/decisions and secrets review PASS.
+- Skipped: app tests/build/runtime/live DB/provider/payment checks; documentation
+  only, static source observations do not establish runtime defects or readiness.
+- Delivery: scoped commit, normal push/readback and actual CI are recorded in
+  output/billing-deferred-20260925/result.json; COMPLETE_PUBLISHED closes this scope.
+- Next: stop with tariffs/billing deferred; no CRM acceptance or new phase started.
+
 ## Pilot owner annotations — DOCS VERIFIED; publication tracked in receipt, 2026-09-25
 
 - Source: owner explicitly asked to analyze attached annotations and document the

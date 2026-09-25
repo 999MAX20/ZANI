@@ -8,6 +8,8 @@ contracts; detailed technical documentation and evidence retain their owners.
 
 ## Current backend boundary and documentation status
 
+- [Billing discussion deferred, later 2026-09-25](billing/BILLING_DISCUSSION_DEFERRED_2026-09-25.md) — latest package with included AI direction supersedes separate-AI/PAYG; prices and billing work deferred, paid-pilot commercial gate retained. No new implementation phase.
+
 - [Paid pilot plan for one clinic, 2026-09-25](pilot/local-crm-completion.md#current-plan) — V1 scope, published closures, remaining code/acceptance/environment/decision gaps, dependencies and proposed order; internal CRM-cycle acceptance recommended next, not started. Historical inventory is preserved separately in the same document.
 - [Backend development audit, 2026-09-14](pilot/backend-development-audit.md) — implemented vs WIP vs missing evidence; not a second task queue.
 - [Backend open logic register](pilot/backend-open-logic-register.md) — canonical backend gap IDs.
@@ -27,7 +29,7 @@ Use this index first when you need to understand where a document belongs. Keep 
 
 ### Approved first paid release
 
-- [V1 product rules](product/V1_PRODUCT_RULES.md) — owner-approved questionnaire decisions: dental administrative CRM, required channels, controlled AI, per-employee subscription and separately metered AI without a monetary cap. Defines target scope and open decisions, not implementation readiness. Read before interpreting older plans or the entity-behavior draft.
+- [V1 product rules](product/V1_PRODUCT_RULES.md) — owner-approved dental administrative CRM, required channels and controlled AI. Read with the latest deferred billing note: CRM package includes AI volume; prices and details remain open. Defines target scope, not implementation readiness.
 
 ### CRM
 

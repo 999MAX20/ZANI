@@ -3,8 +3,8 @@
   "projectName": "Platforma.CRM",
   "projectId": "local-3368c3df041be97f9549005fc6749ad2",
   "canonicalRoot": "C:\\Users\\user\\Desktop\\Zani",
-  "generation": 1,
-  "primaryThreadId": "01a0c36e-33aa-7c72-be9b-72624dd2c739",
+  "generation": 2,
+  "primaryThreadId": "01a0d6c1-3ee4-7f92-b94c-0242bb2eb35e",
   "successorThreadId": null,
   "transition": "idle",
   "autoHandoffEnabled": false,
@@ -20,7 +20,8 @@
     "01a02906-d0a3-7820-80f2-adad5cf5a613",
     "01a02915-a366-7150-91bb-ce938cd50138",
     "01a02954-6edd-74f2-8944-794408801f0d",
-    "01a02916-4955-7491-a51e-6372a6d17ca8"
+    "01a02916-4955-7491-a51e-6372a6d17ca8",
+    "01a0c36e-33aa-7c72-be9b-72624dd2c739"
   ],
   "sourceThreadIds": [
     "01a02906-d0a3-7820-80f2-adad5cf5a613",
@@ -28,5 +29,5 @@
     "01a02954-6edd-74f2-8944-794408801f0d",
     "01a02916-4955-7491-a51e-6372a6d17ca8"
   ],
-  "lastAuthorization": "Owner decision 2026-09-21: compact restores the same task; no rotation before the entire agreed DoD, checks/review, required publication/actual CI and operations are complete. Verified comprehension and the recorded handoff protocol are required. This supersedes automatic handoff on compact; no new product scope or current rotation authorized."
+  "lastAuthorization": "Owner explicit command 2026-09-25: transfer work to one new Platforma.CRM chat in the same saved project and local canonical folder, verify comprehension, switch ownership and archive source; no new product phase."
 }

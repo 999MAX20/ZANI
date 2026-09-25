@@ -2,6 +2,65 @@
 
 Дата: 2026-09-24. Это карточка исполнения, не продуктовый backlog.
 
+## Explicit handoff generation 1 → 2 — RELEASED, 2026-09-25
+
+- Authorization: owner explicitly said «Передай работу новому чату».
+- Mode: operation; one same-project/local successor named Platforma.CRM, read-only
+  comprehension, exclusive owner switch, native source archive/readback, metadata release.
+- Source: 01a0c36e-33aa-7c72-be9b-72624dd2c739; project
+  local-3368c3df041be97f9549005fc6749ad2; canonical C:\Users\user\Desktop\Zani.
+  Native list_projects confirms project/root and Git; list_threads shows no other
+  active CRM executor. Market active task is a different project, not touched.
+- Initial branch codex/ui-testing-toolkit, clean HEAD 652a5c37388bfc9e33c9e9a582882d825770a144;
+  remote main readback equals HEAD. No owned running test/server operations; scoped
+  process scan found no Python/Node processes mentioning this root.
+- Source DoD verified: agent setup 443f69e completed with full local/live/UI and CI;
+  STATUS 4f8ca07 and rules 61b2b64 completed/published with CI success; managed command
+  652a5c3 docs gate and publication complete. At source close its automatic CI was
+  in_progress and not required for docs-only acceptance. Successor later read back
+  completed/success for exact SHA (run 36092639554); this did not reopen the task.
+- Evidence: output/agent-setup-20260924/result.json, output/status-entry-20260924/result.json,
+  output/agent-rules-20260924/result.json, output/managed-handoff-20260925/result.json.
+- Source scope complete; no product phase currently authorized. Proposed future channels
+  or CI optimization are not tasks in progress. Do not reimplement closed work.
+- Only operation-owned metadata may be dirty: .codex/project-session.json, STATUS.md,
+  actual_docs/PROJECT_HANDOFF.md, this checkpoint. No new runtime changes/tests needed.
+- Successor created natively: 01a0d6c1-3ee4-7f92-b94c-0242bb2eb35e, host local,
+  title Platforma.CRM. ID saved; read-only comprehension verified below.
+- Comprehension verified from successor completed turn 01a0d6c1-4155-7503-af10-f395dc5ea84d:
+  correctly identified dental administrative V1, optional/controlled AI, four completed
+  packages and available receipts, exact Git/remote/4 metadata-only dirty paths,
+  generation/owner, no runtime/deployment/channel claim, and no new authorized phase.
+  Successor stayed read-only and idle after reply; no unresolved comprehension gap.
+- Source DoD/review/publication evidence independently confirmed above. Source switched
+  generation to 2 and primary to the verified successor, retired itself and sent the
+  metadata-only finalization instruction before archival; no new product scope.
+- Release receipt, observed 2026-09-25 04:13 UTC: native list_archived_threads
+  (hostId=local, limit=10, first page) returned exact source ID
+  01a0c36e-33aa-7c72-be9b-72624dd2c739, title Platforma.CRM, canonical cwd.
+  Membership in that archived collection is the confirmation; registry flags and
+  absence from a regular task list were not used as archive evidence.
+- Transition key: project local-3368c3df041be97f9549005fc6749ad2;
+  source 01a0c36e-33aa-7c72-be9b-72624dd2c739;
+  successor 01a0d6c1-3ee4-7f92-b94c-0242bb2eb35e; generation 2.
+  Before release, exact awaiting_archive key, both verified flags, complete source
+  DoD, retired source, root/branch/HEAD and all four metadata hashes matched.
+- Release: primary remains the successor, generation remains 2, source remains
+  retired; transition=idle, successorThreadId=null, handoff=null. No second
+  successor, archive request, generation increment or product operation was made.
+  Native task inventory showed no other active executor for this repository.
+- Only the four operation-owned metadata files changed. Runtime permissions,
+  notifications, BusinessEvents, AI, migrations, environment and hooks are unchanged.
+  Backend/frontend tests, installs, servers and full-CI wait are skipped: metadata
+  only, unchanged runtime inputs. Deployment and real channels remain unproven.
+- Exact docs hygiene/link/consistency checks, final commit, normal HEAD:main push,
+  remote SHA readback and separately observed CI are recorded in
+  output/managed-handoff-20260925/handoff-release.json. The release is complete;
+  publication is complete only when that receipt says COMPLETE_PUBLISHED.
+- Next: stop and wait for the owner's separately selected bounded task. Proposed
+  CI optimization and real channels are not authorized; closed work stays closed.
+  Repeating this transition key permits read-only receipt verification only.
+
 ## Managed handoff command — implemented and docs-verified, 2026-09-25
 
 - Source: owner approved the proposed one-command handoff; archive-button trigger

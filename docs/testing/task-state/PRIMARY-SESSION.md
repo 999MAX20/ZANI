@@ -2,6 +2,47 @@
 
 Дата: 2026-09-24. Это карточка исполнения, не продуктовый backlog.
 
+## Managed handoff command — implemented and docs-verified, 2026-09-25
+
+- Source: owner approved the proposed one-command handoff; archive-button trigger
+  explicitly not needed. Mode: instruction implementation; gap: workflow entry point.
+- Owner: registered primary 01a0c36e-33aa-7c72-be9b-72624dd2c739; canonical
+  C:\Users\user\Desktop\Zani; branch codex/ui-testing-toolkit; clean base
+  61b2b6400381793cd2daca63915dad40cea9e8eb; registry idle, no other dirty paths.
+- Scope: AGENTS command routing; existing SESSION_ROLLOVER command, prompt and
+  failure/retry procedure; STATUS and project handoff routing; this checkpoint.
+  Reuse native create/read/wait/send/archive tools and existing registry, no new daemon.
+- Observable result: future explicit command «Передай работу новому чату» authorizes
+  one same-project/local successor named Platforma.CRM, prepared context prompt,
+  read-only comprehension review, exclusive-owner switch and source archive/readback.
+- Acceptance: explicit trigger differs from quotes/setup/close/compact; project identity
+  and source root checked; ambiguous creation never blindly retried; successor cannot
+  write before verification; release survives source archival; failures keep source/
+  pending transition recoverable; no new product scope is inferred.
+- Non-goals: actual handoff in this setup task, registry/hook/CI/app changes, archive
+  event automation, new worktree, deployment or live providers. Runtime impacts N/A.
+- Gates: docs diff/index/range hygiene, local links, tool-schema and scenario review,
+  explicit commit/push/readback; report actual CI separately. Full backend/frontend CI
+  is not an acceptance prerequisite for this docs-only task; do not wait merely because
+  push starts it. Actual cross-chat end-to-end transfer remains untested until invoked.
+- Previous rules phase complete: 61b2b64, both CI jobs success; receipt in
+  output/agent-rules-20260924/result.json. No need to repeat those checks.
+- Implemented: explicit command routing in AGENTS; same-project/local tool sequence,
+  prepared successor + finalization prompts, comprehension checklist and retry/failure
+  table in existing protocol. STATUS and project handoff route to the command; prior
+  rules phase no longer appears unfinished. Registry and hook files unchanged.
+- Docs verification PASS: added Markdown links resolve; complete intended diff and
+  tool signatures reviewed; git diff --check. Scenario review covered setup vs actual
+  command, incomplete source, duplicate/ambiguous create, wrong comprehension,
+  awaiting_archive retry, missing archive confirmation and repeat after release.
+  This is instruction review, not an executed cross-chat test or hook activation.
+- Exact staged/range checks, final SHA, push/readback and observed CI are recorded
+  in output/managed-handoff-20260925/result.json. Only docs changed; no app tests,
+  install/build, live provider calls or working-DB operations were required/run.
+- Completion boundary: verified instruction setup + normal publication, not actual
+  transfer. After publication stop. Next permitted action is an explicit user command
+  to hand off, or a separately selected product task; neither starts automatically.
+
 ## Streamline repository instructions — locally verified; publication tracked in receipt, 2026-09-24
 
 - Source: owner voice request to rewrite AGENTS.md after discussing focused checks,

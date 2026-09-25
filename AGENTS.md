@@ -193,6 +193,15 @@ It does not authorize ownership transfer, new tasks, commits, worktrees, scope e
 or archive. Do not disable compaction or split scope to manufacture completion.
 No background autosave is promised; abrupt closure may leave unsaved progress.
 
+An explicit user command «Передай работу новому чату» invokes the managed handoff
+in [SESSION_ROLLOVER](docs/testing/SESSION_ROLLOVER.md). It authorizes one successor
+named Platforma.CRM in the same saved project/local canonical folder, its prepared
+read-only context prompt, verified ownership transfer and archival of this source.
+Follow the protocol without asking again for already-authorized steps. A quotation,
+discussion/setup of this command, compaction, window closure or archive-button click
+does not invoke it. Reuse an existing transition; never create a duplicate successor.
+The command does not waive completion/ownership checks or authorize a product phase.
+
 For an unavailable old chat, perform read-only reconstruction under the
 [recovery protocol](docs/testing/SESSION_ROLLOVER.md). Unknown/non-primary/retired
 chats cannot appoint themselves owner. An exceptional recovery needs an explicit
